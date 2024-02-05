@@ -219,14 +219,14 @@ fetchLayerAndTableList <- function(url, token) {
   feature_service <- jsonlite::fromJSON(content)
 
   # Get layer id's and names
-  if (hasName(feature_service, "layers")) {
+  if (hasName(feature_service, "layers") & length(feature_service$layers) > 0) {
     layers <- dplyr::select(feature_service$layers, id, name)
   } else {
     layers <- tibble::tibble(.rows = 0)
   }
 
   # Get table id's and names
-  if (hasName(feature_service, "tables")) {
+  if (hasName(feature_service, "tables") & length(feature_service$tables) > 0) {
     tables <- dplyr::select(feature_service$tables, id, name)
   } else {
     tables <- tibble::tibble(.rows = 0)
@@ -237,20 +237,30 @@ fetchLayerAndTableList <- function(url, token) {
   return(layers_tables)
 }
 
-fetchRawIU <- function(iu_database_url = "https://services1.arcgis.com/fBc8EJBxQRMcHlei/arcgis/rest/services/MOJN_IU_Database/FeatureServer", agol_username = "mojn_data", agol_password = keyring::key_get(service = "AGOL", username = agol_username)) {
+
+#' Fetch tabular data and metadata from AGOL
+#
+#' @param database_url Feature service URL
+#' @param agol_username AGOL headless account username
+#' @param agol_password AGOL headless account password (do not hard code this into your scripts!)
+#'
+#' @return A list containing tabular data and metadata
+#' @export
+#'
+fetchRawData <- function(database_url, agol_username, agol_password = keyring::key_get(service = "AGOL", username = agol_username)) {
   token <- fetchAGOLToken(agol_username, agol_password)
-  layers_tables <- fetchLayerAndTableList(iu_database_url, token)
+  layers_tables <- fetchLayerAndTableList(database_url, token)
   ids <- layers_tables$id
   names(ids) <- layers_tables$name
 
   metadata <- sapply(ids, function(id) {
-    meta <- fetchMetadata(iu_database_url, token, id)
+    meta <- fetchMetadata(database_url, token, id)
     meta[["table_id"]] <- id
     return(meta)
   }, simplify = FALSE, USE.NAMES = TRUE)
 
   data <- sapply(metadata, function(meta){
-    data_table <- fetchAllRecords(iu_database_url, meta$table_id, token, outFields = paste(names(meta$fields), collapse = ",")) %>%
+    data_table <- fetchAllRecords(database_url, meta$table_id, token, outFields = paste(names(meta$fields), collapse = ",")) %>%
       dplyr::select(dplyr::any_of(names(meta$fields)))
     return(data_table)
   }, simplify = FALSE, USE.NAMES = TRUE)
@@ -289,90 +299,6 @@ setDataTypesFromMetadata <- function(raw_data) {
   raw_data$data <- data
 
   return(raw_data)
-}
-
-wrangleIU <- function(raw_data) {
-  raw_data <- setDataTypesFromMetadata(raw_data)
-  cols_to_remove <- c("objectid", "InstanceName", "^app_.*", "GapsKey", "^Shrub.*")
-  id_replacement_names <- c("globalid", "objectid", "parentglobalid")
-  flattened_data <- list(data = list(),
-                         metadata = list())
-
-  # Clean up data table columns
-  raw_data$data <- sapply(raw_data$data, function(tbl) {
-    # Fix case in id col names
-    global_id <- grepl("^globalid$", names(tbl), ignore.case = TRUE)
-    object_id <- grepl("^objectid$", names(tbl), ignore.case = TRUE)
-    parent_global_id <- grepl("^parentglobalid$", names(tbl), ignore.case = TRUE)
-    id_col_indices <- global_id | object_id | parent_global_id
-    replacement_names <- id_replacement_names[c(any(global_id), any(object_id), any(parent_global_id))]
-
-    names(tbl)[id_col_indices] <- replacement_names
-    cols_to_remove <- paste0("(", paste(cols_to_remove, collapse = ")|("), ")")  # Turn columns to remove into a regex
-    remove <- names(tbl)[grepl(cols_to_remove, names(tbl))]
-    if(length(remove) > 0) {
-      tbl <- dplyr::select(tbl, -remove)
-    }
-
-    tbl <- dplyr::mutate(tbl,
-                         dplyr::across(where(is.character), ~trimws(.x, which = "both")),
-                         dplyr::across(where(is.character), ~dplyr::na_if(.x, "")))
-    return(tbl)
-  })
-
-  flattened_data$data$Site <- raw_data$data$Site
-  flattened_data$data$Visit <- raw_data$data$Visit
-  flattened_data$data$PointIntercept_Surface <- dplyr::left_join(dplyr::select(raw_data$data$PointIntercept, -dplyr::any_of(c("CreationDate", "Creator", "EditDate", "Editor"))),
-                                         dplyr::select(raw_data$data$PointIntercept_LPI, dplyr::any_of(dplyr::starts_with(c("Meter", "SoilSurface", "PlantBase", "globalid", "parentglobalid")))),
-                                         by = c("globalid" = "parentglobalid"))
-  flattened_data$data$PointIntercept_WoodyVegHeight <- dplyr::left_join(dplyr::select(raw_data$data$PointIntercept, -dplyr::any_of(c("CreationDate", "Creator", "EditDate", "Editor"))),
-                                              dplyr::select(raw_data$data$PointIntercept_LPI, -dplyr::any_of(dplyr::starts_with(c("Overstory", "Canopy", "Soil", "Disturbance", "Shrub", "PlantBase")))),
-                                              by = c("globalid" = "parentglobalid")) %>%
-    dplyr::filter(Meter %% 5 == 0)
-
-  lpi_overstory <- dplyr::left_join(dplyr::select(raw_data$data$PointIntercept, -dplyr::any_of(c("CreationDate", "Creator", "EditDate", "Editor"))),
-                                                dplyr::select(raw_data$data$PointIntercept_LPI, dplyr::any_of(dplyr::starts_with(c("Meter", "Overstory", "globalid", "parentglobalid")))),
-                                                by = c("globalid" = "parentglobalid")) %>%
-    dplyr::select(-dplyr::any_of(c("CreationDate", "Creator", "EditDate", "Editor", "globalid"))) %>%
-    dplyr::inner_join(raw_data$data$PointIntercept_Overstory, by = c("globalid.y" = "parentglobalid")) %>%
-    dplyr::rename(Species = Overstory) %>%
-    dplyr::mutate(Layer = "overstory")
-  names(lpi_overstory) <- stringr::str_remove(names(lpi_overstory), "^Overstory")
-  lpi_canopy <- dplyr::left_join(dplyr::select(raw_data$data$PointIntercept, -dplyr::any_of(c("CreationDate", "Creator", "EditDate", "Editor"))),
-                                 dplyr::select(raw_data$data$PointIntercept_LPI, dplyr::any_of(dplyr::starts_with(c("Meter", "Canopy", "globalid", "parentglobalid")))),
-                                 by = c("globalid" = "parentglobalid")) %>%
-    dplyr::select(-dplyr::any_of(c("CreationDate", "Creator", "EditDate", "Editor", "globalid"))) %>%
-    dplyr::inner_join(raw_data$data$PointIntercept_Canopy, by = c("globalid.y" = "parentglobalid")) %>%
-    dplyr::rename(Species = Canopy) %>%
-    dplyr::mutate(Layer = "canopy")
-  names(lpi_canopy) <- stringr::str_remove(names(lpi_canopy), "^Canopy")
-
-  flattened_data$data$PointIntercept_VegSpecies <- rbind(dplyr::select(lpi_overstory, intersect(names(lpi_canopy), names(lpi_overstory))),
-                                     dplyr::select(lpi_canopy, intersect(names(lpi_canopy), names(lpi_overstory))))
-
-  flattened_data$data$Gaps_Canopy <- dplyr::left_join(dplyr::select(raw_data$data$Gaps, -dplyr::any_of(c("CreationDate", "Creator", "EditDate", "Editor"))),
-                                  raw_data$data$Gaps_Canopy,
-                                  by = c("globalid" = "parentglobalid"))
-  flattened_data$data$Gaps_Basal <- dplyr::left_join(dplyr::select(raw_data$data$Gaps, -dplyr::any_of(c("CreationDate", "Creator", "EditDate", "Editor"))),
-                                 raw_data$data$Gaps_Basal,
-                                 by = c("globalid" = "parentglobalid"))
-  flattened_data$data$Inventory <- dplyr::left_join(dplyr::select(raw_data$data$Inventory, -dplyr::any_of(c("CreationDate", "Creator", "EditDate", "Editor"))),
-                                raw_data$data$Inventory_Species,
-                                by = c("globalid" = "parentglobalid"))
-  flattened_data$data$Frequency_Crust <- dplyr::left_join(dplyr::select(raw_data$data$Frequency, -dplyr::any_of(c("CreationDate", "Creator", "EditDate", "Editor"))),
-                                      raw_data$data$Frequency_Quadrats,
-                                      by = c("globalid" = "parentglobalid"))
-  flattened_data$data$Frequency_Species <- dplyr::left_join(dplyr::select(flattened_data$data$Frequency_Crust, -dplyr::any_of(c("CreationDate", "Creator", "EditDate", "Editor", "Crust", "CrustPhotoName"))),
-                                        raw_data$data$Frequency_Species,
-                                        by = c("globalid" = "parentglobalid"))
-  flattened_data$data$Density <- dplyr::left_join(dplyr::select(raw_data$data$Density, -dplyr::any_of(c("CreationDate", "Creator", "EditDate", "Editor"))),
-                              raw_data$data$Density_Species,
-                              by = c("globalid" = "parentglobalid"))
-  flattened_data$data$SoilStability <- dplyr::left_join(dplyr::select(raw_data$data$SoilStability, -dplyr::any_of(c("CreationDate", "Creator", "EditDate", "Editor"))),
-                                    raw_data$data$SoilStability_Measurements,
-                                    by = c("globalid" = "parentglobalid"))
-
-  return(flattened_data)
 }
 
 formatMetadataAsEML <- function(meta, token) {
