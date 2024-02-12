@@ -270,6 +270,14 @@ fetchRawData <- function(database_url, agol_username, agol_password = keyring::k
   return(raw_data)
 }
 
+
+#' Set data types based on AGOL metadata
+#
+#' @param raw_data list of tabular data and metadata
+#'
+#' @return A list containing tabular data and metadata
+#' @export
+#'
 setDataTypesFromMetadata <- function(raw_data) {
   data <- sapply(names(raw_data$data), function(tbl_name) {
     tbl <- raw_data$data[[tbl_name]]
@@ -300,6 +308,47 @@ setDataTypesFromMetadata <- function(raw_data) {
 
   return(raw_data)
 }
+
+
+#' A generalized function to start data cleaning
+#
+#' @param raw_data list of tabular data and metadata
+#' @param cols_to_remove a vector containing the names of columns to remove
+#' @param id_replacement_names a vector containing
+#'
+#' @return A list containing tabular data and metadata
+#' @export
+#'
+cleanData <- function(raw_data , cols_to_remove = c("objectid", "InstanceName", "^app_.*", "GapsKey", "^Shrub.*"), id_replacement_names = c("globalid", "objectid", "parentglobalid")) {
+  raw_data <- setDataTypesFromMetadata(raw_data)
+
+  # Clean up data table columns
+  raw_data$data <- sapply(raw_data$data, function(tbl) {
+    # Fix case in id col names
+    global_id <- grepl("^globalid$", names(tbl), ignore.case = TRUE)
+    object_id <- grepl("^objectid$", names(tbl), ignore.case = TRUE)
+    parent_global_id <- grepl("^parentglobalid$", names(tbl), ignore.case = TRUE)
+    id_col_indices <- global_id | object_id | parent_global_id
+    replacement_names <- id_replacement_names[c(any(global_id), any(object_id), any(parent_global_id))]
+
+    names(tbl)[id_col_indices] <- replacement_names
+    cols_to_remove <- paste0("(", paste(cols_to_remove, collapse = ")|("), ")")  # Turn columns to remove into a regex
+    remove <- names(tbl)[grepl(cols_to_remove, names(tbl))]
+    if(length(remove) > 0) {
+      tbl <- dplyr::select(tbl, -remove)
+    }
+
+    tbl <- dplyr::mutate(tbl,
+                         dplyr::across(where(is.character), ~trimws(.x, which = "both")),
+                         dplyr::across(where(is.character), ~dplyr::na_if(.x, "")))
+    return(tbl)
+  })
+
+
+
+  return(raw_data)
+}
+
 
 formatMetadataAsEML <- function(meta, token) {
   attrs <- sapply(names(meta), function(attr_name) {
