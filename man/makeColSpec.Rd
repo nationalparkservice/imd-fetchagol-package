@@ -7,7 +7,7 @@
 makeColSpec(fields)
 }
 \arguments{
-\item{fields}{Fields data dictionary, as returned by \link{fetchFromAccess}}
+\item{fields}{Fields data dictionary, as returned by \link{fetchRawData}}
 }
 \value{
 A list of lists

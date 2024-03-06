@@ -14,6 +14,12 @@ generateMetadataCSVs(
 }
 \arguments{
 \item{data}{output of \code{fetchRawData()}}
+
+\item{dictionary_dir}{Folder to store data dictionaries in}
+
+\item{dictionary_filenames}{Named list with names \code{c("tables", "attributes", "categories")} indicating what to name the tables, attributes, and categories data dictionaries. You are encouraged to keep the default names unless you have a good reason to change them.}
+
+\item{verbose}{Output feedback to console?}
 }
 \description{
 Write data dictionaries to files

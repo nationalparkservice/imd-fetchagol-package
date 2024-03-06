@@ -12,11 +12,13 @@ writeToFiles(
     "data_dictionary_attributes.txt", categories = "data_dictionary_categories.txt"),
   lookup_dir = NA,
   verbose = FALSE,
-  removePII = TRUE,
+  removeColumns = TRUE,
   cols_to_remove = c("Editor", "Creator")
 )
 }
 \arguments{
+\item{all_data}{Output of \code{fetchRawData()}}
+
 \item{data_dir}{Folder to store data csv's in}
 
 \item{dictionary_dir}{Folder to store data dictionaries in}
@@ -27,11 +29,9 @@ writeToFiles(
 
 \item{verbose}{Output feedback to console?}
 
-\item{cols_to_remove}{Columns that should be removed, \code{c("Editor", "Creator")} is the default because they can contain personally identifiable information}
-
-\item{all_tables}{Output of \code{fetchRawData()}}
-
 \item{removeColumns}{Should columns be removed?}
+
+\item{cols_to_remove}{Columns that should be removed, \code{c("Editor", "Creator")} is the default because they can contain personally identifiable information}
 }
 \description{
 Write data and data dictionaries to files

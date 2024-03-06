@@ -2,7 +2,7 @@
 
 #' Write data and data dictionaries to files
 #'
-#' @param all_tables Output of `fetchRawData()`
+#' @param all_data Output of `fetchRawData()`
 #' @param data_dir Folder to store data csv's in
 #' @param dictionary_dir Folder to store data dictionaries in
 #' @param lookup_dir Optional folder to store lookup tables in. If left as `NA`, lookups won't be exported.
@@ -16,12 +16,12 @@
 writeToFiles <- function(all_data, data_dir = here::here("data", "final"), dictionary_dir = here::here("data", "dictionary"), dictionary_filenames = c(tables = "data_dictionary_tables.txt",
                                                                                                                                                          attributes = "data_dictionary_attributes.txt",
                                                                                                                                                          categories = "data_dictionary_categories.txt"),
-                         lookup_dir = NA, verbose = FALSE, removePII = TRUE, cols_to_remove = c("Editor", "Creator")) {
+                         lookup_dir = NA, verbose = FALSE, removeColumns = TRUE, cols_to_remove = c("Editor", "Creator")) {
 
-  if (removePII) {
+  if (removeColumns) {
     # Remove specified attributes from data tables (default is creator and editor columns)
     all_data$data <- lapply(all_data$data, function(table){
-      table <- table %>% select(-any_of(cols_to_remove))
+      table <- table %>% dplyr::select(-any_of(cols_to_remove))
     })
 
     # Remove specified attributes from metadata info (default is creator and editor columns)
@@ -69,6 +69,9 @@ writeToFiles <- function(all_data, data_dir = here::here("data", "final"), dicti
 #' Write data dictionaries to files
 #'
 #' @param data output of `fetchRawData()`
+#' @param dictionary_dir Folder to store data dictionaries in
+#' @param dictionary_filenames Named list with names `c("tables", "attributes", "categories")` indicating what to name the tables, attributes, and categories data dictionaries. You are encouraged to keep the default names unless you have a good reason to change them.
+#' @param verbose Output feedback to console?
 #'
 #' @export
 #'
@@ -175,7 +178,7 @@ generateMetadataCSVs <- function(data, dictionary_dir = here::here("data", "dict
 #'
 #' Given a fields data dictionary, create a list of column specifications that can be used in [readr::read_csv()] or [vroom::vroom()]
 #'
-#' @param fields Fields data dictionary, as returned by [fetchFromAccess]
+#' @param fields Fields data dictionary, as returned by [fetchRawData]
 #'
 #' @return A list of lists
 #' @export
