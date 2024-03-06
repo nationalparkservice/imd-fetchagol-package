@@ -5,7 +5,7 @@
 \title{Write data dictionaries to files}
 \usage{
 generateMetadataCSVs(
-  metadata,
+  data,
   dictionary_dir = here::here("data", "dictionary"),
   dictionary_filenames = c(tables = "data_dictionary_tables.txt", attributes =
     "data_dictionary_attributes.txt", categories = "data_dictionary_categories.txt"),
@@ -13,7 +13,7 @@ generateMetadataCSVs(
 )
 }
 \arguments{
-\item{metadata}{Metadata part of output of \code{fetchRawData()}}
+\item{data}{output of \code{fetchRawData()}}
 }
 \description{
 Write data dictionaries to files

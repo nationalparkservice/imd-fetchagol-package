@@ -12,6 +12,7 @@ writeToFiles(
     "data_dictionary_attributes.txt", categories = "data_dictionary_categories.txt"),
   lookup_dir = NA,
   verbose = FALSE,
+  removePII = TRUE,
   cols_to_remove = c("Editor", "Creator")
 )
 }
@@ -26,8 +27,12 @@ writeToFiles(
 
 \item{verbose}{Output feedback to console?}
 
-\item{all_tables}{Output of \verb{fetchRaw Data()}}
+\item{cols_to_remove}{Columns that should be removed, \code{c("Editor", "Creator")} is the default because they can contain personally identifiable information}
+
+\item{all_tables}{Output of \code{fetchRawData()}}
+
+\item{removeColumns}{Should columns be removed?}
 }
 \description{
-You shouldn't need to call this function directly unless you are using it to write a data export function for another R package. If you are using this package on its own, you will usually want to call \code{fetchFromAccess(save_to_files = TRUE)}.
+Write data and data dictionaries to files
 }
