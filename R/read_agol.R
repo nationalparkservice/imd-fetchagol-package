@@ -349,41 +349,6 @@ cleanData <- function(raw_data , cols_to_remove = c("objectid", "InstanceName", 
   return(raw_data)
 }
 
-
-formatMetadataAsEML <- function(meta, token) {
-  attrs <- sapply(names(meta), function(attr_name) {
-    meta_list <- meta[[attr_name]]
-    if (meta_list$attributes$class == "date") {
-      format_string <- "YYYY-MM-DD"
-    } else if (meta_list$attributes$class == "dateTime") {
-      format_string <- "YYYY-MM-DDThh:mm:ss"
-    } else {
-      format_string <- NA
-    }
-    attributes_df <- tibble::tibble(attributeName = attr_name,
-                              attributeDefinition = meta_list$description,
-                              unit = c(meta_list$attributes$unit, NA)[1],
-                              class = meta_list$attributes$class,
-                              dateTimeFormatString = format_string,
-                              missingValueCode = c(meta_list$attributes$missing_value_code, NA)[1],
-                              missingValueCodeExplanation = c(meta_list$attributes$missing_value_code_exp, NA)[1])
-
-    return(attrs)
-  }, simplify = TRUE)
-
-  catvars <- sapply(names(meta), function(attr_name) {
-    if (length(meta_list$lookup$lookup_url) > 0) {
-      catvars_df <- meta_list$lookup$lookup_df %>%
-        dplyr::mutate(attributeName = attr_name) %>%
-        dplyr::select(attributeName, code = name, definition = description)
-    } else {
-      catvars_df <- NULL
-    }
-    return(catvars_df)
-  }, simplify = TRUE)
-
-}
-
 fetchHostedCSV <- function(item_id, token, root = "nps.maps.arcgis.com") {
   url <- paste0("https://", root, "/sharing/rest/content/items/", item_id, "/data")
   resp <- httr::GET(url, query = list(token = token$token))

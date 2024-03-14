@@ -10,13 +10,15 @@
 #' @param verbose Output feedback to console?
 #' @param removeColumns Should columns be removed?
 #' @param cols_to_remove Columns that should be removed, `c("Editor", "Creator")` is the default because they can contain personally identifiable information
+#' @param missing_value_dict a dictionary containing key-value pairs where the key is the attribute class and the value is the code for a missing value
 #'
 #' @export
 #'
 writeToFiles <- function(all_data, data_dir = here::here("data", "final"), dictionary_dir = here::here("data", "dictionary"), dictionary_filenames = c(tables = "data_dictionary_tables.txt",
                                                                                                                                                          attributes = "data_dictionary_attributes.txt",
                                                                                                                                                          categories = "data_dictionary_categories.txt"),
-                         lookup_dir = NA, verbose = FALSE, removeColumns = TRUE, cols_to_remove = c("Editor", "Creator")) {
+                         lookup_dir = NA, verbose = FALSE, removeColumns = TRUE, cols_to_remove = c("Editor", "Creator"),
+                         missing_value_dict = hash::hash(keys = c("string", "integer", "decimal", "dateTime"), values = c("N/D", "-999", "-999", ""))) {
 
   if (removeColumns) {
     # Remove specified attributes from data tables (default is creator and editor columns)
@@ -33,7 +35,7 @@ writeToFiles <- function(all_data, data_dir = here::here("data", "final"), dicti
 
 
   # Write metadata to csv's
-  generateMetadataCSVs(all_data)
+  dict <- generateMetadataCSVs(data = all_data, missing_value_dict = missing_value_dict)
 
   col_spec <- makeColSpec(dict$attributes_dict)
 
@@ -72,13 +74,14 @@ writeToFiles <- function(all_data, data_dir = here::here("data", "final"), dicti
 #' @param dictionary_dir Folder to store data dictionaries in
 #' @param dictionary_filenames Named list with names `c("tables", "attributes", "categories")` indicating what to name the tables, attributes, and categories data dictionaries. You are encouraged to keep the default names unless you have a good reason to change them.
 #' @param verbose Output feedback to console?
+#' @param missing_value_dict a dictionary containing key-value pairs where the key is the attribute class and the value is the code for a missing value
 #'
 #' @export
 #'
 generateMetadataCSVs <- function(data, dictionary_dir = here::here("data", "dictionary"), dictionary_filenames = c(tables = "data_dictionary_tables.txt",
                                                                                                                        attributes = "data_dictionary_attributes.txt",
                                                                                                                        categories = "data_dictionary_categories.txt"),
-                                 verbose = FALSE){
+                                 verbose = FALSE, missing_value_dict = hash::hash(keys = c("string", "integer", "decimal", "dateTime"), values = c("N/D", "-999", "-999", ""))){
 
   # Create empty data frames to hold metadata
   dict <- list(tables_dict = data.frame(tableName = character(),
@@ -140,10 +143,13 @@ generateMetadataCSVs <- function(data, dictionary_dir = here::here("data", "dict
                           grepl("^dateTime$", data$metadata[[i]]$fields[[j]]$attributes$class, ignore.case = TRUE) ~ "YYYY-MM-DDThh:mm:ss",
                           grepl("^time$", data$metadata[[i]]$fields[[j]]$attributes$class, ignore.case = TRUE) ~ "hh:mm:ss",
                           .default = NA),
+                        # Add the corresponding missing value code from the mising value dictionary based on the attribute class
+                        missingValueCode = missing_value_dict[[data$metadata[[i]]$fields[[j]]$attributes$class]],
                         # If there is a lookup table for attribute add name to new metadata
                         lookup = ifelse(length(data$metadata[[i]]$fields[[j]]$lookup$lookup_name) != 0, data$metadata[[i]]$fields[[j]]$lookup$lookup_name, NA),
                         # rClass is class() of attribute in corresponding data table
-                        rClass = class(data$data[[i]][[j]]))
+                        # rClass = class(data$data[[i]][[j]]))
+                        rClass = class(data$data[[names(data$metadata)[i]]][[j]]))
 
       # If there is a lookup table associated with the attribute add it to categories table
       if (length(data$metadata[[i]]$fields[[j]]$lookup$lookup_name) != 0){

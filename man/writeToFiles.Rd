@@ -13,7 +13,9 @@ writeToFiles(
   lookup_dir = NA,
   verbose = FALSE,
   removeColumns = TRUE,
-  cols_to_remove = c("Editor", "Creator")
+  cols_to_remove = c("Editor", "Creator"),
+  missing_value_dict = hash::hash(keys = c("string", "integer", "decimal", "dateTime"),
+    values = c("N/D", "-999", "-999", ""))
 )
 }
 \arguments{
@@ -32,6 +34,8 @@ writeToFiles(
 \item{removeColumns}{Should columns be removed?}
 
 \item{cols_to_remove}{Columns that should be removed, \code{c("Editor", "Creator")} is the default because they can contain personally identifiable information}
+
+\item{missing_value_dict}{a dictionary containing key-value pairs where the key is the attribute class and the value is the code for a missing value}
 }
 \description{
 Write data and data dictionaries to files
