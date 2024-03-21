@@ -10,8 +10,8 @@ generateMetadataCSVs(
   dictionary_filenames = c(tables = "data_dictionary_tables.txt", attributes =
     "data_dictionary_attributes.txt", categories = "data_dictionary_categories.txt"),
   verbose = FALSE,
-  missing_value_dict = hash::hash(keys = c("string", "integer", "decimal", "dateTime"),
-    values = c("N/D", "-999", "-999", ""))
+  missing_value_dict = hash::hash(keys = c("string", "integer", "decimal", "dateTime",
+    "date", "time"), values = c("N/D", "-999", "-999", "", "", ""))
 )
 }
 \arguments{

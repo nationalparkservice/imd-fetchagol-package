@@ -21,16 +21,20 @@ writeToFiles <- function(all_data, data_dir = here::here("data", "final"), dicti
                          missing_value_dict = hash::hash(keys = c("string", "integer", "decimal", "dateTime"), values = c("N/D", "-999", "-999", ""))) {
 
   if (removeColumns) {
-    # Remove specified attributes from data tables (default is creator and editor columns)
-    all_data$data <- lapply(all_data$data, function(table){
-      table <- table %>% dplyr::select(-any_of(cols_to_remove))
-    })
 
-    # Remove specified attributes from metadata info (default is creator and editor columns)
-    all_data$metadata <- lapply(all_data$metadata, function(table){
-      table$fields <- table$fields[names(table$fields) %in% cols_to_remove == FALSE]
-      return(table)
-    })
+
+    all_data <- removeCols(all_data)
+
+    # # Remove specified attributes from data tables (default is creator and editor columns)
+    # all_data$data <- lapply(all_data$data, function(table){
+    #   table <- table %>% dplyr::select(-any_of(cols_to_remove))
+    # })
+    #
+    # # Remove specified attributes from metadata info (default is creator and editor columns)
+    # all_data$metadata <- lapply(all_data$metadata, function(table){
+    #   table$fields <- table$fields[names(table$fields) %in% cols_to_remove == FALSE]
+    #   return(table)
+    # })
   }
 
 
@@ -78,10 +82,12 @@ writeToFiles <- function(all_data, data_dir = here::here("data", "final"), dicti
 #'
 #' @export
 #'
+#'
+# TODO: make sure that the metadata is correct even if variables are out of order
 generateMetadataCSVs <- function(data, dictionary_dir = here::here("data", "dictionary"), dictionary_filenames = c(tables = "data_dictionary_tables.txt",
                                                                                                                        attributes = "data_dictionary_attributes.txt",
                                                                                                                        categories = "data_dictionary_categories.txt"),
-                                 verbose = FALSE, missing_value_dict = hash::hash(keys = c("string", "integer", "decimal", "dateTime"), values = c("N/D", "-999", "-999", ""))){
+                                 verbose = FALSE, missing_value_dict = hash::hash(keys = c("string", "integer", "decimal", "dateTime", "date", "time"), values = c("N/D", "-999", "-999", "", "", ""))){
 
   # Create empty data frames to hold metadata
   dict <- list(tables_dict = data.frame(tableName = character(),
@@ -143,18 +149,17 @@ generateMetadataCSVs <- function(data, dictionary_dir = here::here("data", "dict
                           grepl("^dateTime$", data$metadata[[i]]$fields[[j]]$attributes$class, ignore.case = TRUE) ~ "YYYY-MM-DDThh:mm:ss",
                           grepl("^time$", data$metadata[[i]]$fields[[j]]$attributes$class, ignore.case = TRUE) ~ "hh:mm:ss",
                           .default = NA),
-                        # Add the corresponding missing value code from the mising value dictionary based on the attribute class
+                        # Add the corresponding missing value code from the missing value dictionary based on the attribute class
                         missingValueCode = missing_value_dict[[data$metadata[[i]]$fields[[j]]$attributes$class]],
                         # If there is a lookup table for attribute add name to new metadata
                         lookup = ifelse(length(data$metadata[[i]]$fields[[j]]$lookup$lookup_name) != 0, data$metadata[[i]]$fields[[j]]$lookup$lookup_name, NA),
-                        # rClass is class() of attribute in corresponding data table
-                        # rClass = class(data$data[[i]][[j]]))
                         rClass = class(data$data[[names(data$metadata)[i]]][[j]]))
 
       # If there is a lookup table associated with the attribute add it to categories table
       if (length(data$metadata[[i]]$fields[[j]]$lookup$lookup_name) != 0){
 
         lookupTable <- data$metadata[[i]]$fields[[j]]$lookup$lookup_df %>%
+          dplyr::rename_with(~tolower(.x)) %>%
           # Add column containing attribute name and rename columns to be able to bind to categories table
           dplyr::mutate(attributeName = names(data$metadata[[i]]$fields[j]), code = name, definition = label) %>%
           dplyr::select(code, definition, attributeName)
@@ -214,3 +219,20 @@ makeColSpec <- function(fields) {
   return(col_spec)
 }
 
+# classes <- data.frame(tableName = character(),
+#                       variable = character(),
+#                       class = character(),
+#                       type = character())
+#
+# for (i in 1:length(data$metadata)) {
+#   for(j in 1:length(data$metadata[[i]]$fields)) {
+#     classes <- classes %>%
+#       add_row(
+#         tableName = data$metadata[[i]]$table_name,
+#         variable = names(data$metadata[[i]]$fields)[[j]],
+#         class = data$metadata[[i]]$fields[[j]]$attributes$class,
+#         type = class(data$metadata[[i]]$fields[[j]]$attributes$class)
+#       )
+#     # append(classes, data$metadata[[i]]$fields[[j]]$attributes$class)
+#   }
+# }
