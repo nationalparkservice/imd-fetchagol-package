@@ -84,6 +84,8 @@ writeToFiles <- function(all_data, data_dir = here::here("data", "final"), dicti
 #'
 #'
 # TODO: make sure that the metadata is correct even if variables are out of order
+# TODO make it so the missing value dict doesn't break things if something is null/na
+# TODO re-assign POSIXct/POSIXt variables so they aren't printed twice in data dict
 generateMetadataCSVs <- function(data, dictionary_dir = here::here("data", "dictionary"), dictionary_filenames = c(tables = "data_dictionary_tables.txt",
                                                                                                                        attributes = "data_dictionary_attributes.txt",
                                                                                                                        categories = "data_dictionary_categories.txt"),

@@ -319,7 +319,7 @@ setDataTypesFromMetadata <- function(raw_data) {
 #' @return A list containing tabular data and metadata
 #' @export
 #'
-cleanData <- function(raw_data , cols_to_remove = c("objectid", "InstanceName", "^app_.*", "GapsKey", "^Shrub.*"), id_replacement_names = c("globalid", "objectid", "parentglobalid")) {
+cleanData <- function(raw_data , cols_to_remove = c("^objectid$", "InstanceName", "^app_.*", "GapsKey", "^Shrub.*", "CreationDate", "Creator", "EditDate", "Editor"), id_replacement_names = c("globalid", "objectid", "parentglobalid")) {
   raw_data <- setDataTypesFromMetadata(raw_data)
 
   # Clean up data table columns
@@ -329,14 +329,14 @@ cleanData <- function(raw_data , cols_to_remove = c("objectid", "InstanceName", 
     object_id <- grepl("^objectid$", names(tbl), ignore.case = TRUE)
     parent_global_id <- grepl("^parentglobalid$", names(tbl), ignore.case = TRUE)
     id_col_indices <- global_id | object_id | parent_global_id
-    replacement_names <- id_replacement_names[c(any(global_id), any(object_id), any(parent_global_id))]
-
-    names(tbl)[id_col_indices] <- replacement_names
-    cols_to_remove <- paste0("(", paste(cols_to_remove, collapse = ")|("), ")")  # Turn columns to remove into a regex
-    remove <- names(tbl)[grepl(cols_to_remove, names(tbl))]
-    if(length(remove) > 0) {
-      tbl <- dplyr::select(tbl, -remove)
-    }
+    # replacement_names <- id_replacement_names[c(any(global_id), any(object_id), any(parent_global_id))]
+    #
+    # names(tbl)[id_col_indices] <- replacement_names
+    # cols_to_remove <- paste0("(", paste(cols_to_remove, collapse = ")|("), ")")  # Turn columns to remove into a regex
+    # remove <- names(tbl)[grepl(cols_to_remove, names(tbl))]
+    # if(length(remove) > 0) {
+    #   tbl <- dplyr::select(tbl, -remove)
+    # }
 
     tbl <- dplyr::mutate(tbl,
                          dplyr::across(where(is.character), ~trimws(.x, which = "both")),
@@ -344,7 +344,7 @@ cleanData <- function(raw_data , cols_to_remove = c("objectid", "InstanceName", 
     return(tbl)
   })
 
-
+  raw_data <- removeCols(raw_data, cols_to_remove = cols_to_remove)
 
   return(raw_data)
 }
@@ -355,4 +355,29 @@ fetchHostedCSV <- function(item_id, token, root = "nps.maps.arcgis.com") {
   content <- httr::content(resp, type = "text/csv", encoding = "UTF-8")
 
   return(content)
+}
+
+
+#' A function to remove specified columns and associated metadata
+#
+#' @param raw_data list of tabular data and metadata
+#' @param cols_to_remove a vector containing the names of columns to remove (default is creator and editor columns)
+# TODO: make removal case-insensitive
+# TODO: do we want to remove and cols containing part of
+# TODO: make sure metadata removal is working
+removeCols <- function(all_data, cols_to_remove = c("Editor", "Creator")) {
+  # Remove specified attributes from data tables
+  all_data$data <- lapply(all_data$data, function(table){
+    table <- table %>%
+      dplyr::select(-any_of(cols_to_remove))
+    # table <- table %>% dplyr::select(-grepl("^objectid$", names(tbl), ignore.case = TRUE))
+  })
+
+  # Remove specified attributes from metadata info
+  all_data$metadata <- lapply(all_data$metadata, function(table){
+    table$fields <- table$fields[names(table$fields) %in% cols_to_remove == FALSE]
+    return(table)
+  })
+
+  return(all_data)
 }
