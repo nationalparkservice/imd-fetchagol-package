@@ -21,20 +21,7 @@ writeToFiles <- function(all_data, data_dir = here::here("data", "final"), dicti
                          missing_value_dict = hash::hash(keys = c("string", "integer", "decimal", "dateTime"), values = c("N/D", "-999", "-999", ""))) {
 
   if (removeColumns) {
-
-
     all_data <- removeCols(all_data)
-
-    # # Remove specified attributes from data tables (default is creator and editor columns)
-    # all_data$data <- lapply(all_data$data, function(table){
-    #   table <- table %>% dplyr::select(-any_of(cols_to_remove))
-    # })
-    #
-    # # Remove specified attributes from metadata info (default is creator and editor columns)
-    # all_data$metadata <- lapply(all_data$metadata, function(table){
-    #   table$fields <- table$fields[names(table$fields) %in% cols_to_remove == FALSE]
-    #   return(table)
-    # })
   }
 
 

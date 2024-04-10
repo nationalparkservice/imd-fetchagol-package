@@ -362,20 +362,18 @@ fetchHostedCSV <- function(item_id, token, root = "nps.maps.arcgis.com") {
 #
 #' @param raw_data list of tabular data and metadata
 #' @param cols_to_remove a vector containing the names of columns to remove (default is creator and editor columns)
-# TODO: make removal case-insensitive
 # TODO: do we want to remove and cols containing part of
-# TODO: make sure metadata removal is working
 removeCols <- function(all_data, cols_to_remove = c("Editor", "Creator")) {
   # Remove specified attributes from data tables
   all_data$data <- lapply(all_data$data, function(table){
-    table <- table %>%
-      dplyr::select(-any_of(cols_to_remove))
-    # table <- table %>% dplyr::select(-grepl("^objectid$", names(tbl), ignore.case = TRUE))
+    table2 <- table %>%
+      # Remove columns with names that are in the columns to remove vector
+      dplyr::select(-grep(paste(cols_to_remove,collapse="|"), names(table), ignore.case = TRUE))
   })
 
   # Remove specified attributes from metadata info
   all_data$metadata <- lapply(all_data$metadata, function(table){
-    table$fields <- table$fields[names(table$fields) %in% cols_to_remove == FALSE]
+    table$fields <- table$fields[tolower(names(table$fields)) %in% tolower(cols_to_remove) == FALSE]
     return(table)
   })
 
