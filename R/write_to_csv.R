@@ -70,7 +70,6 @@ writeToFiles <- function(all_data, data_dir = here::here("data", "final"), dicti
 #' @export
 #'
 #'
-# TODO: make sure that the metadata is correct even if variables are out of order
 # TODO make it so the missing value dict doesn't break things if something is null/na
 # TODO re-assign POSIXct/POSIXt variables so they aren't printed twice in data dict
 generateMetadataCSVs <- function(data, dictionary_dir = here::here("data", "dictionary"), dictionary_filenames = c(tables = "data_dictionary_tables.txt",
@@ -139,7 +138,7 @@ generateMetadataCSVs <- function(data, dictionary_dir = here::here("data", "dict
                           grepl("^time$", data$metadata[[i]]$fields[[j]]$attributes$class, ignore.case = TRUE) ~ "hh:mm:ss",
                           .default = NA),
                         # Add the corresponding missing value code from the missing value dictionary based on the attribute class
-                        missingValueCode = missing_value_dict[[data$metadata[[i]]$fields[[j]]$attributes$class]],
+                        missingValueCode = ifelse(tolower(data$metadata[[i]]$fields[[j]]$attributes$class) %in% hash::keys(missing_value_dict) , missing_value_dict[[tolower(data$metadata[[i]]$fields[[j]]$attributes$class)]], paste0("No missing value code found for ", data$metadata[[i]]$fields[[j]]$attributes$class)),
                         # If there is a lookup table for attribute add name to new metadata
                         lookup = ifelse(length(data$metadata[[i]]$fields[[j]]$lookup$lookup_name) != 0, data$metadata[[i]]$fields[[j]]$lookup$lookup_name, NA),
                         rClass = class(data$data[[names(data$metadata)[i]]][[j]]))
