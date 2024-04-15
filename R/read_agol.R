@@ -319,6 +319,7 @@ setDataTypesFromMetadata <- function(raw_data) {
 #' @return A list containing tabular data and metadata
 #' @export
 #'
+#' TODO: decide what the standard cols we want to remove are
 cleanData <- function(raw_data , cols_to_remove = c("^objectid$", "InstanceName", "^app_.*", "GapsKey", "^Shrub.*", "CreationDate", "Creator", "EditDate", "Editor"), id_replacement_names = c("globalid", "objectid", "parentglobalid")) {
   raw_data <- setDataTypesFromMetadata(raw_data)
 
@@ -362,20 +363,39 @@ fetchHostedCSV <- function(item_id, token, root = "nps.maps.arcgis.com") {
 #
 #' @param raw_data list of tabular data and metadata
 #' @param cols_to_remove a vector containing the names of columns to remove (default is creator and editor columns)
-# TODO: do we want to remove and cols containing part of
-removeCols <- function(all_data, cols_to_remove = c("Editor", "Creator")) {
-  # Remove specified attributes from data tables
-  all_data$data <- lapply(all_data$data, function(table){
-    table2 <- table %>%
-      # Remove columns with names that are in the columns to remove vector
-      dplyr::select(-grep(paste(cols_to_remove,collapse="|"), names(table), ignore.case = TRUE))
-  })
+#' @param exact Should the columns be matched exactly or should regular expressions be used?
+#'
+removeCols <- function(all_data, cols_to_remove = c("CreationDate", "Creator", "EditDate", "Editor"), exact = TRUE) {
 
-  # Remove specified attributes from metadata info
-  all_data$metadata <- lapply(all_data$metadata, function(table){
-    table$fields <- table$fields[tolower(names(table$fields)) %in% tolower(cols_to_remove) == FALSE]
-    return(table)
-  })
+  # Remove variables using exact matches
+  if(exact){
+    print("exact match")
+    # Remove specified attributes from data tables
+    all_data$data <- lapply(all_data$data, function(table){
+      table <- table[, names(table) %in% cols_to_remove == FALSE]
+    })
+
+    # Remove specified attributes from metadata info
+    all_data$metadata <- lapply(all_data$metadata, function(table){
+      table$fields <- table$fields[names(table$fields) %in% cols_to_remove == FALSE]
+      return(table)
+    })}
+  # Remove variables using regular expressions
+  else{
+    print("regular expressions")
+    # Remove specified attributes from data tables
+    all_data$data <- lapply(all_data$data, function(table){
+      table2 <- table %>%
+        # Remove columns with names that are in the columns to remove vector
+        dplyr::select(-grep(paste(cols_to_remove,collapse="|"), names(table), ignore.case = TRUE))
+    })
+
+    # Remove specified attributes from metadata info
+    all_data$metadata <- lapply(all_data$metadata, function(table){
+      table$fields <- table$fields[-grep(paste(cols_to_remove,collapse="|"), names(table$fields), ignore.case = TRUE)]
+      return(table)
+    })
+  }
 
   return(all_data)
 }
