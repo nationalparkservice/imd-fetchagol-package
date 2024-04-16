@@ -9,6 +9,7 @@ generateMetadataCSVs(
   dictionary_dir = here::here("data", "dictionary"),
   dictionary_filenames = c(tables = "data_dictionary_tables.txt", attributes =
     "data_dictionary_attributes.txt", categories = "data_dictionary_categories.txt"),
+  lookup_dir = NA,
   verbose = FALSE,
   missing_value_dict = hash::hash(keys = c("string", "integer", "decimal", "dateTime",
     "date", "time"), values = c("N/D", "-999", "-999", "", "", ""))

@@ -13,7 +13,7 @@ writeToFiles(
   lookup_dir = NA,
   verbose = FALSE,
   removeColumns = TRUE,
-  cols_to_remove = c("Editor", "Creator"),
+  cols_to_remove = c("CreationDate", "Creator", "EditDate", "Editor"),
   missing_value_dict = hash::hash(keys = c("string", "integer", "decimal", "dateTime"),
     values = c("N/D", "-999", "-999", ""))
 )

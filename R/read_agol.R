@@ -253,20 +253,45 @@ fetchRawData <- function(database_url, agol_username, agol_password = keyring::k
   ids <- layers_tables$id
   names(ids) <- layers_tables$name
 
-  metadata <- sapply(ids, function(id) {
-    meta <- fetchMetadata(database_url, token, id)
-    meta[["table_id"]] <- id
-    return(meta)
-  }, simplify = FALSE, USE.NAMES = TRUE)
+  raw_data <- tryCatch({
+    # Import metadata
+    metadata <- sapply(ids, function(id) {
+      meta <- fetchMetadata(database_url, token, id)
+      meta[["table_id"]] <- id
+      return(meta)
+    }, simplify = FALSE, USE.NAMES = TRUE)
 
-  data <- sapply(metadata, function(meta){
-    data_table <- fetchAllRecords(database_url, meta$table_id, token, outFields = paste(names(meta$fields), collapse = ",")) %>%
-      dplyr::select(dplyr::any_of(names(meta$fields)))
-    return(data_table)
-  }, simplify = FALSE, USE.NAMES = TRUE)
+    # If above code didn't break import data tables using metadata
+    data <- sapply(metadata, function(meta){
+      data_table <- fetchAllRecords(database_url, meta$table_id, token, outFields = paste(names(meta$fields), collapse = ",")) %>%
+        dplyr::select(dplyr::any_of(names(meta$fields)))
+      return(data_table)
+    }, simplify = FALSE, USE.NAMES = TRUE)
 
-  raw_data <- list(data = data,
-                   metadata = metadata)
+    raw_data <- list(data = data,
+                     metadata = metadata)
+
+    # If metadata was unable to import
+  }, error = function(e) {
+
+    message("Unable to import metadata - make sure it is filled out correctly")
+    print(paste0("Error message: ", e))
+    message("Importing data tables without metadata")
+
+    metadata = list()
+
+    # Import data tables without using metadata info
+    data <- sapply(layers_tables$id, function(id){
+      data_table <- fetchAllRecords(database_url, id, token)
+      return(data_table)
+    }, simplify = FALSE, USE.NAMES = TRUE)
+
+    # Assign data layers correct names
+    names(data) <- layers_tables$name
+
+    raw_data <- list(data = data,
+                     metadata = metadata)})
+
   return(raw_data)
 }
 
@@ -319,7 +344,6 @@ setDataTypesFromMetadata <- function(raw_data) {
 #' @return A list containing tabular data and metadata
 #' @export
 #'
-#' TODO: decide what the standard cols we want to remove are
 cleanData <- function(raw_data , cols_to_remove = c("^objectid$", "InstanceName", "^app_.*", "GapsKey", "^Shrub.*", "CreationDate", "Creator", "EditDate", "Editor"), id_replacement_names = c("globalid", "objectid", "parentglobalid")) {
   raw_data <- setDataTypesFromMetadata(raw_data)
 
@@ -345,6 +369,7 @@ cleanData <- function(raw_data , cols_to_remove = c("^objectid$", "InstanceName"
     return(tbl)
   })
 
+  # TODO: decide what the standard cols we want to remove are
   raw_data <- removeCols(raw_data, cols_to_remove = cols_to_remove)
 
   return(raw_data)

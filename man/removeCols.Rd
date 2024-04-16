@@ -4,10 +4,16 @@
 \alias{removeCols}
 \title{A function to remove specified columns and associated metadata}
 \usage{
-removeCols(all_data, cols_to_remove = c("Editor", "Creator"))
+removeCols(
+  all_data,
+  cols_to_remove = c("CreationDate", "Creator", "EditDate", "Editor"),
+  exact = TRUE
+)
 }
 \arguments{
 \item{cols_to_remove}{a vector containing the names of columns to remove (default is creator and editor columns)}
+
+\item{exact}{Should the columns be matched exactly or should regular expressions be used?}
 
 \item{raw_data}{list of tabular data and metadata}
 }
