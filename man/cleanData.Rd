@@ -6,8 +6,7 @@
 \usage{
 cleanData(
   raw_data,
-  cols_to_remove = c("^objectid$", "InstanceName", "^app_.*", "GapsKey", "^Shrub.*",
-    "CreationDate", "Creator", "EditDate", "Editor"),
+  cols_to_remove = c("^objectid$", "CreationDate", "Creator", "EditDate", "Editor"),
   id_replacement_names = c("globalid", "objectid", "parentglobalid")
 )
 }

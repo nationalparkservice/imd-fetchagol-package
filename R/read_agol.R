@@ -253,7 +253,8 @@ fetchRawData <- function(database_url, agol_username, agol_password = keyring::k
   ids <- layers_tables$id
   names(ids) <- layers_tables$name
 
-  raw_data <- tryCatch({
+  # Catches errors when metadata can't be imported
+  metadata <- tryCatch({
     # Import metadata
     metadata <- sapply(ids, function(id) {
       meta <- fetchMetadata(database_url, token, id)
@@ -261,24 +262,43 @@ fetchRawData <- function(database_url, agol_username, agol_password = keyring::k
       return(meta)
     }, simplify = FALSE, USE.NAMES = TRUE)
 
-    # If above code didn't break import data tables using metadata
+    # If metadata was unable to import
+  }, error = function(e) {
+    message("Unable to import metadata - make sure it is filled out")
+    print(paste0("Error message: ", e))
+
+    metadata = list()})
+
+
+  # Catches errors from incorrect queries
+  data <- tryCatch({
+    # If metadata didn't import - import data tables without using metadata
+    if(length(metadata) == 0){
+      message("Importing data tables with no metadata")
+
+      # Import data tables without using metadata info
+      data <- sapply(layers_tables$id, function(id){
+        data_table <- fetchAllRecords(database_url, id, token)
+        return(data_table)
+      }, simplify = FALSE, USE.NAMES = TRUE)
+
+      # Assign data layers correct names
+      names(data) <- layers_tables$name
+
+      data
+    } else{
+    # If metadata did import - try to import data using metadata info
     data <- sapply(metadata, function(meta){
       data_table <- fetchAllRecords(database_url, meta$table_id, token, outFields = paste(names(meta$fields), collapse = ",")) %>%
         dplyr::select(dplyr::any_of(names(meta$fields)))
       return(data_table)
-    }, simplify = FALSE, USE.NAMES = TRUE)
+    }, simplify = FALSE, USE.NAMES = TRUE)}
 
-    raw_data <- list(data = data,
-                     metadata = metadata)
+  }, error = function(e){
 
-    # If metadata was unable to import
-  }, error = function(e) {
-
-    message("Unable to import metadata - make sure it is filled out correctly")
+    message("Querying data using metadata failed - try calling troubleshootMetadata() to find problem")
     print(paste0("Error message: ", e))
-    message("Importing data tables without metadata")
-
-    metadata = list()
+    message("Importing data tables without using metadata")
 
     # Import data tables without using metadata info
     data <- sapply(layers_tables$id, function(id){
@@ -289,8 +309,11 @@ fetchRawData <- function(database_url, agol_username, agol_password = keyring::k
     # Assign data layers correct names
     names(data) <- layers_tables$name
 
-    raw_data <- list(data = data,
-                     metadata = metadata)})
+    return(data)
+  })
+
+  raw_data <- list(data = data,
+                   metadata = metadata)
 
   return(raw_data)
 }
@@ -344,7 +367,7 @@ setDataTypesFromMetadata <- function(raw_data) {
 #' @return A list containing tabular data and metadata
 #' @export
 #'
-cleanData <- function(raw_data , cols_to_remove = c("^objectid$", "InstanceName", "^app_.*", "GapsKey", "^Shrub.*", "CreationDate", "Creator", "EditDate", "Editor"), id_replacement_names = c("globalid", "objectid", "parentglobalid")) {
+cleanData <- function(raw_data , cols_to_remove = c("^objectid$", "CreationDate", "Creator", "EditDate", "Editor"), id_replacement_names = c("globalid", "objectid", "parentglobalid")) {
   raw_data <- setDataTypesFromMetadata(raw_data)
 
   # Clean up data table columns
@@ -369,7 +392,6 @@ cleanData <- function(raw_data , cols_to_remove = c("^objectid$", "InstanceName"
     return(tbl)
   })
 
-  # TODO: decide what the standard cols we want to remove are
   raw_data <- removeCols(raw_data, cols_to_remove = cols_to_remove)
 
   return(raw_data)
@@ -394,7 +416,7 @@ removeCols <- function(all_data, cols_to_remove = c("CreationDate", "Creator", "
 
   # Remove variables using exact matches
   if(exact){
-    print("exact match")
+    print("Removing columns using exact matching")
     # Remove specified attributes from data tables
     all_data$data <- lapply(all_data$data, function(table){
       table <- table[, names(table) %in% cols_to_remove == FALSE]
@@ -407,7 +429,7 @@ removeCols <- function(all_data, cols_to_remove = c("CreationDate", "Creator", "
     })}
   # Remove variables using regular expressions
   else{
-    print("regular expressions")
+    print("Removing columns using regular expressions")
     # Remove specified attributes from data tables
     all_data$data <- lapply(all_data$data, function(table){
       table2 <- table %>%
@@ -423,4 +445,44 @@ removeCols <- function(all_data, cols_to_remove = c("CreationDate", "Creator", "
   }
 
   return(all_data)
+}
+
+#' A function to help troubleshoot differences between column names in data and metadata if querying data using metadata fails
+#'
+#' @param all_data output of `fetchRawData()` containing data and metadata
+#' @param returnAll Do you want to return all column names or only ones that don't have a match
+#'
+#' @returns list of dfs containing data and metadata column names
+#' @export
+troubleshootMetadata <- function(all_data, returnAll = FALSE){
+
+  results <- list()
+
+  for(i in 1:length(all_data$data)){
+    # Create a new data frame using the extracted data column names
+    dataColumnNames <- colnames(all_data$data[[i]])
+    new_df <- data.frame(dataColumnNames)
+
+    # Create a new data frame using the extracted metadata column names
+    metadataColumnNames <- names(all_data$metadata[[i]]$fields)
+    new_df2 <- data.frame(metadataColumnNames)
+
+
+    # Join data and metadata column names together
+    joined_data <- new_df %>%
+      dplyr::full_join(new_df2, dplyr::join_by(dataColumnNames == metadataColumnNames), keep = TRUE)
+
+    # If you only want to return the column names without a match
+    if(!returnAll){
+      joined_data <- joined_data %>%
+        dplyr::filter((is.na(dataColumnNames) | is.na(metadataColumnNames)))
+    }
+
+    # Add results to list
+    results[[i]] <- joined_data
+  }
+
+  # Give list items correct name
+  names(results) <- names(all_data$data)
+  return(results)
 }

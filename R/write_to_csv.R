@@ -17,16 +17,16 @@
 writeToFiles <- function(all_data, data_dir = here::here("data", "final"), dictionary_dir = here::here("data", "dictionary"), dictionary_filenames = c(tables = "data_dictionary_tables.txt",
                                                                                                                                                          attributes = "data_dictionary_attributes.txt",
                                                                                                                                                          categories = "data_dictionary_categories.txt"),
-                         lookup_dir = NA, verbose = FALSE, removeColumns = TRUE, cols_to_remove = c("Editor", "Creator"),
+                         lookup_dir = NA, verbose = FALSE, removeColumns = TRUE, cols_to_remove = c("CreationDate", "Creator", "EditDate", "Editor"),
                          missing_value_dict = hash::hash(keys = c("string", "integer", "decimal", "dateTime"), values = c("N/D", "-999", "-999", ""))) {
 
   if (removeColumns) {
-    all_data <- removeCols(all_data)
+    all_data <- removeCols(all_data, cols_to_remove = cols_to_remove)
   }
 
 
   # Write metadata to csv's
-  dict <- generateMetadataCSVs(data = all_data, missing_value_dict = missing_value_dict)
+  dict <- generateMetadataCSVs(data = all_data, dictionary_dir = dictionary_dir, dictionary_filenames = dictionary_filenames, lookup_dir = lookup_dir, verbose = verbose, missing_value_dict = missing_value_dict)
 
   col_spec <- makeColSpec(dict$attributes_dict)
 
@@ -75,7 +75,8 @@ writeToFiles <- function(all_data, data_dir = here::here("data", "final"), dicti
 generateMetadataCSVs <- function(data, dictionary_dir = here::here("data", "dictionary"), dictionary_filenames = c(tables = "data_dictionary_tables.txt",
                                                                                                                        attributes = "data_dictionary_attributes.txt",
                                                                                                                        categories = "data_dictionary_categories.txt"),
-                                 verbose = FALSE, missing_value_dict = hash::hash(keys = c("string", "integer", "decimal", "dateTime", "date", "time"), values = c("N/D", "-999", "-999", "", "", ""))){
+                                 lookup_dir = NA, verbose = FALSE,
+                                 missing_value_dict = hash::hash(keys = c("string", "integer", "decimal", "dateTime", "date", "time"), values = c("N/D", "-999", "-999", "", "", ""))){
 
   # Create empty data frames to hold metadata
   dict <- list(tables_dict = data.frame(tableName = character(),
@@ -95,22 +96,8 @@ generateMetadataCSVs <- function(data, dictionary_dir = here::here("data", "dict
 
     categories_dict = data.frame(attributeName = character(),
                                   code = character(),
-                                  definition = character()))
-
-
-
-    # dict <- lapply(names(metadata), function(table) {
-    #
-    #   # print(table)
-    #   # print(metadata[[table]]$table_name)
-    #   # print('hi')
-    # dict$tables_dict <- dict$tables_dict %>%
-    #   tibble::add_row(tableName = metadata[[table]]$table_name,
-    #                   fileName = paste0(metadata[[table]]$table_name, ".csv"),
-    #                   tableDescription = metadata[[table]]$table_description)
-    #
-    #      })
-
+                                  definition = character()),
+    lookups = list())
 
   # TODO change this to apply
   for (i in 1:length(data$metadata)) {
@@ -122,40 +109,61 @@ generateMetadataCSVs <- function(data, dictionary_dir = here::here("data", "dict
                       tableDescription = data$metadata[[i]]$table_description)
 
     for(j in 1:length(data$metadata[[i]]$fields)) {
+      # Save field info as variable to make code easier to read
+      field <- data$metadata[[i]]$fields[[j]]
 
       # Add information about each attribute to attribute metadata
       dict$attributes_dict <- dict$attributes_dict %>%
         tibble::add_row(tableName = data$metadata[[i]]$table_name,
                         attributeName = names(data$metadata[[i]]$fields[j]),
-                        attributeDefinition = data$metadata[[i]]$fields[[j]]$description,
-                        class = data$metadata[[i]]$fields[[j]]$attributes$class,
+                        attributeDefinition = field$description,
+                        class = field$attributes$class,
                         # If attribute has a unit add to new metadata
-                        unit = ifelse(!is.null(data$metadata[[i]]$fields[[j]]$attributes$unit), data$metadata[[i]]$fields[[j]]$attributes$unit, NA),
+                        unit = ifelse(!is.null(field$attributes$unit), field$attributes$unit, NA),
                         # If attribute is date/dateTime/time add format to new metadata
                         dateTimeFormatString = dplyr::case_when(
-                          grepl("^date$", data$metadata[[i]]$fields[[j]]$attributes$class, ignore.case = TRUE) ~ "YYYY-MM-DD",
-                          grepl("^dateTime$", data$metadata[[i]]$fields[[j]]$attributes$class, ignore.case = TRUE) ~ "YYYY-MM-DDThh:mm:ss",
-                          grepl("^time$", data$metadata[[i]]$fields[[j]]$attributes$class, ignore.case = TRUE) ~ "hh:mm:ss",
+                          grepl("^date$", field$attributes$class, ignore.case = TRUE) ~ "YYYY-MM-DD",
+                          grepl("^dateTime$", field$attributes$class, ignore.case = TRUE) ~ "YYYY-MM-DDThh:mm:ss",
+                          grepl("^time$", field$attributes$class, ignore.case = TRUE) ~ "hh:mm:ss",
                           .default = NA),
                         # Add the corresponding missing value code from the missing value dictionary based on the attribute class
-                        missingValueCode = ifelse(tolower(data$metadata[[i]]$fields[[j]]$attributes$class) %in% hash::keys(missing_value_dict) , missing_value_dict[[tolower(data$metadata[[i]]$fields[[j]]$attributes$class)]], paste0("No missing value code found for ", data$metadata[[i]]$fields[[j]]$attributes$class)),
+                        missingValueCode = ifelse(tolower(field$attributes$class) %in% hash::keys(missing_value_dict) , missing_value_dict[[tolower(field$attributes$class)]], paste0("No missing value code found for ", field$attributes$class)),
                         # If there is a lookup table for attribute add name to new metadata
-                        lookup = ifelse(length(data$metadata[[i]]$fields[[j]]$lookup$lookup_name) != 0, data$metadata[[i]]$fields[[j]]$lookup$lookup_name, NA),
-                        rClass = class(data$data[[names(data$metadata)[i]]][[j]]))
+                        lookup = ifelse(length(field$lookup$lookup_name) != 0, field$lookup$lookup_name, NA),
+                        rClass = ifelse(class(data$data[[names(data$metadata)[i]]][[j]]) == "POSIXct" | class(data$data[[names(data$metadata)[i]]][[j]]) == "POSIXt", "date", class(data$data[[names(data$metadata)[i]]][[j]])))
+                          # class(data$data[[names(data$metadata)[i]]][[j]]))
 
       # If there is a lookup table associated with the attribute add it to categories table
-      if (length(data$metadata[[i]]$fields[[j]]$lookup$lookup_name) != 0){
+      if (length(field$lookup$lookup_name) != 0){
 
-        lookupTable <- data$metadata[[i]]$fields[[j]]$lookup$lookup_df %>%
+        lookupTable <- field$lookup$lookup_df %>%
           dplyr::rename_with(~tolower(.x)) %>%
           # Add column containing attribute name and rename columns to be able to bind to categories table
           dplyr::mutate(attributeName = names(data$metadata[[i]]$fields[j]), code = name, definition = label) %>%
           dplyr::select(code, definition, attributeName)
 
+        # Add categories to categories dict
         dict$categories_dict <- rbind(dict$categories_dict, lookupTable)
+        # Add look up table to list of lookup tables
+        dict$lookups[[field$lookup$lookup_name]] <- lookupTable
       }
 
     }
+  }
+
+
+  # Write lookups to csv
+  if (!is.na(lookup_dir)) {
+    if (!dir.exists(lookup_dir)) {
+      dir.create(lookup_dir, recursive = TRUE)
+    }
+    if (verbose) {message(paste0("\nWriting lookups to ", lookup_dir, "..."))}
+    lapply(names(dict$lookups), function(tbl_name) {
+      if (verbose) {message(paste0("\t\t", tbl_name, ".csv"))}
+      readr::write_csv(dict$lookups[[tbl_name]],
+                       here::here(lookup_dir, paste0(tbl_name, ".csv")),
+                       na = "")
+    })
   }
 
   # Write dictionaries to file
@@ -206,21 +214,3 @@ makeColSpec <- function(fields) {
 
   return(col_spec)
 }
-
-# classes <- data.frame(tableName = character(),
-#                       variable = character(),
-#                       class = character(),
-#                       type = character())
-#
-# for (i in 1:length(data$metadata)) {
-#   for(j in 1:length(data$metadata[[i]]$fields)) {
-#     classes <- classes %>%
-#       add_row(
-#         tableName = data$metadata[[i]]$table_name,
-#         variable = names(data$metadata[[i]]$fields)[[j]],
-#         class = data$metadata[[i]]$fields[[j]]$attributes$class,
-#         type = class(data$metadata[[i]]$fields[[j]]$attributes$class)
-#       )
-#     # append(classes, data$metadata[[i]]$fields[[j]]$attributes$class)
-#   }
-# }
