@@ -80,10 +80,11 @@ fetchAllRecords <- function(data_path, layer_number, token, geometry = FALSE, wh
       exc_transfer <- FALSE
     }
 
+    # TODO: make it so line and polygon data are imported correctly with geometry data
     if (geometry) {
       partial_result <- cbind(content$features$attributes, content$features$geometry) %>%
-        dplyr::mutate(wkid = content$spatialReference$wkid) %>%
-        tibble::as_tibble()
+      dplyr::mutate(wkid = content$spatialReference$wkid) %>%
+      tibble::as_tibble()
     } else {
       partial_result <- tibble::as_tibble(content$features$attributes)
     }
@@ -449,40 +450,68 @@ removeCols <- function(all_data, cols_to_remove = c("CreationDate", "Creator", "
 
 #' A function to help troubleshoot differences between column names in data and metadata if querying data using metadata fails
 #'
+#' @description
+#' A short description...
+#'
+#'
 #' @param all_data output of `fetchRawData()` containing data and metadata
 #' @param returnAll Do you want to return all column names or only ones that don't have a match
+#' @param allInfo Should all attribute information or only column names be returned
 #'
 #' @returns list of dfs containing data and metadata column names
 #' @export
-troubleshootMetadata <- function(all_data, returnAll = FALSE){
+troubleshootMetadata <- function(all_data, returnAll = FALSE, allInfo = FALSE){
+
+  # Vector of valid EML types
+  classList <- c("string", "integer", "decimal", "datetime", "date", "time")
 
   results <- list()
 
-  for(i in 1:length(all_data$data)){
+  results <- sapply(names(all_data$data), function(table){
+    print(table)
     # Create a new data frame using the extracted data column names
-    dataColumnNames <- colnames(all_data$data[[i]])
-    new_df <- data.frame(dataColumnNames)
+    dataNames <- data.frame(dataColumnNames = colnames(all_data$data[[table]]))
 
     # Create a new data frame using the extracted metadata column names
-    metadataColumnNames <- names(all_data$metadata[[i]]$fields)
-    new_df2 <- data.frame(metadataColumnNames)
+    metadataNames <- data.frame(metadataColumnNames = names(all_data$metadata[[table]]$fields))
 
+    # To return all metadata info
+    if(allInfo){
+      # Extract definition from metadata
+      metadataNames$metadataDef <- sapply(all_data$metadata[[table]]$fields, "[[", 1)
 
-    # Join data and metadata column names together
-    joined_data <- new_df %>%
-      dplyr::full_join(new_df2, dplyr::join_by(dataColumnNames == metadataColumnNames), keep = TRUE)
-
-    # If you only want to return the column names without a match
-    if(!returnAll){
-      joined_data <- joined_data %>%
-        dplyr::filter((is.na(dataColumnNames) | is.na(metadataColumnNames)))
+      # TODO: This seems to be a list for some tables instead of a vector???
+      # Extract class and unit from metadata
+      fieldList <- sapply(all_data$metadata[[table]]$fields, "[[", 2)
+      metadataNames$metadataClass <- as.vector(sapply(fieldList, "[", 1))
+      metadataNames$metadataUnit <- as.vector(sapply(fieldList, "[", 2))
     }
 
-    # Add results to list
-    results[[i]] <- joined_data
-  }
+    # Join data and metadata column names together
+    joined_data <- dataNames %>%
+      dplyr::full_join(metadataNames, dplyr::join_by(dataColumnNames == metadataColumnNames), keep = TRUE) %>%
+      # Replace any NULL values with NA
+      replace(. == "NULL" | is.null(.), NA_character_)
 
-  # Give list items correct name
+    # To only return the column names without matches
+    if(!returnAll){
+      if(allInfo){
+      joined_data <- joined_data %>%
+        dplyr::filter(is.na(dataColumnNames) | is.na(metadataColumnNames) | is.na(metadataDef) | metadataDef == "" | is.na(metadataClass) | !(tolower(metadataClass) %in% classList) | ((tolower(metadataClass) == "integer" | tolower(metadataClass) == "decimal") & is.na(metadataUnit)))
+      } else{
+        joined_data <- joined_data %>%
+          # Filter only for for N
+          dplyr::filter(is.na(dataColumnNames) | is.na(metadataColumnNames))
+      }
+    }
+
+    # # Add results to list
+    # results[[i]] <- joined_data
+
+    return(joined_data)
+  }, simplify = FALSE)
+
+  # Give tables in result the correct names
   names(results) <- names(all_data$data)
   return(results)
 }

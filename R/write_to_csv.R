@@ -18,7 +18,7 @@ writeToFiles <- function(all_data, data_dir = here::here("data", "final"), dicti
                                                                                                                                                          attributes = "data_dictionary_attributes.txt",
                                                                                                                                                          categories = "data_dictionary_categories.txt"),
                          lookup_dir = NA, verbose = FALSE, removeColumns = TRUE, cols_to_remove = c("CreationDate", "Creator", "EditDate", "Editor"),
-                         missing_value_dict = hash::hash(keys = c("string", "integer", "decimal", "dateTime"), values = c("N/D", "-999", "-999", ""))) {
+                         missing_value_dict = hash::hash(keys = c("string", "integer", "decimal", "datetime"), values = c("N/D", "-999", "-999", ""))) {
 
   if (removeColumns) {
     all_data <- removeCols(all_data, cols_to_remove = cols_to_remove)
@@ -76,7 +76,7 @@ generateMetadataCSVs <- function(data, dictionary_dir = here::here("data", "dict
                                                                                                                        attributes = "data_dictionary_attributes.txt",
                                                                                                                        categories = "data_dictionary_categories.txt"),
                                  lookup_dir = NA, verbose = FALSE,
-                                 missing_value_dict = hash::hash(keys = c("string", "integer", "decimal", "dateTime", "date", "time"), values = c("N/D", "-999", "-999", "", "", ""))){
+                                 missing_value_dict = hash::hash(keys = c("string", "integer", "decimal", "datetime", "date", "time"), values = c("N/D", "-999", "-999", "", "", ""))){
 
   # Create empty data frames to hold metadata
   dict <- list(tables_dict = data.frame(tableName = character(),
@@ -117,7 +117,7 @@ generateMetadataCSVs <- function(data, dictionary_dir = here::here("data", "dict
         tibble::add_row(tableName = data$metadata[[i]]$table_name,
                         attributeName = names(data$metadata[[i]]$fields[j]),
                         attributeDefinition = field$description,
-                        class = field$attributes$class,
+                        class = tolower(field$attributes$class),
                         # If attribute has a unit add to new metadata
                         unit = ifelse(!is.null(field$attributes$unit), field$attributes$unit, NA),
                         # If attribute is date/dateTime/time add format to new metadata
