@@ -1,4 +1,6 @@
 #' @importFrom magrittr %>% %<>%
+#' @importFrom keyring key_get
+
 
 pkg_globals <- new.env(parent = emptyenv())
 
@@ -409,7 +411,7 @@ fetchHostedCSV <- function(item_id, token, root = "nps.maps.arcgis.com") {
 
 #' A function to remove specified columns and associated metadata
 #
-#' @param raw_data list of tabular data and metadata
+#' @param all_data list of tabular data and metadata
 #' @param cols_to_remove a vector containing the names of columns to remove (default is creator and editor columns)
 #' @param exact Should the columns be matched exactly or should regular expressions be used?
 #'

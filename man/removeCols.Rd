@@ -11,11 +11,11 @@ removeCols(
 )
 }
 \arguments{
+\item{all_data}{list of tabular data and metadata}
+
 \item{cols_to_remove}{a vector containing the names of columns to remove (default is creator and editor columns)}
 
 \item{exact}{Should the columns be matched exactly or should regular expressions be used?}
-
-\item{raw_data}{list of tabular data and metadata}
 }
 \description{
 A function to remove specified columns and associated metadata

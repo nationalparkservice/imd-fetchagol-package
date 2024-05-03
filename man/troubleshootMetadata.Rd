@@ -4,16 +4,18 @@
 \alias{troubleshootMetadata}
 \title{A function to help troubleshoot differences between column names in data and metadata if querying data using metadata fails}
 \usage{
-troubleshootMetadata(all_data, returnAll = FALSE)
+troubleshootMetadata(all_data, returnAll = FALSE, allInfo = FALSE)
 }
 \arguments{
 \item{all_data}{output of \code{fetchRawData()} containing data and metadata}
 
 \item{returnAll}{Do you want to return all column names or only ones that don't have a match}
+
+\item{allInfo}{Should all attribute information or only column names be returned}
 }
 \value{
 list of dfs containing data and metadata column names
 }
 \description{
-A function to help troubleshoot differences between column names in data and metadata if querying data using metadata fails
+A short description...
 }

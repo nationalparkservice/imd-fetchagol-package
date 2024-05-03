@@ -11,7 +11,7 @@ generateMetadataCSVs(
     "data_dictionary_attributes.txt", categories = "data_dictionary_categories.txt"),
   lookup_dir = NA,
   verbose = FALSE,
-  missing_value_dict = hash::hash(keys = c("string", "integer", "decimal", "dateTime",
+  missing_value_dict = hash::hash(keys = c("string", "integer", "decimal", "datetime",
     "date", "time"), values = c("N/D", "-999", "-999", "", "", ""))
 )
 }
@@ -21,6 +21,8 @@ generateMetadataCSVs(
 \item{dictionary_dir}{Folder to store data dictionaries in}
 
 \item{dictionary_filenames}{Named list with names \code{c("tables", "attributes", "categories")} indicating what to name the tables, attributes, and categories data dictionaries. You are encouraged to keep the default names unless you have a good reason to change them.}
+
+\item{lookup_dir}{Optional folder to store lookup tables in. If left as \code{NA}, lookups won't be exported.}
 
 \item{verbose}{Output feedback to console?}
 

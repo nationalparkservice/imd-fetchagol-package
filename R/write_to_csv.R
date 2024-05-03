@@ -64,6 +64,7 @@ writeToFiles <- function(all_data, data_dir = here::here("data", "final"), dicti
 #' @param data output of `fetchRawData()`
 #' @param dictionary_dir Folder to store data dictionaries in
 #' @param dictionary_filenames Named list with names `c("tables", "attributes", "categories")` indicating what to name the tables, attributes, and categories data dictionaries. You are encouraged to keep the default names unless you have a good reason to change them.
+#' @param lookup_dir Optional folder to store lookup tables in. If left as `NA`, lookups won't be exported.
 #' @param verbose Output feedback to console?
 #' @param missing_value_dict a dictionary containing key-value pairs where the key is the attribute class and the value is the code for a missing value
 #'
