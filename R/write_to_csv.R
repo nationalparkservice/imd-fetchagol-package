@@ -49,7 +49,7 @@ writeToFiles <- function(all_data, data_dir = here::here("data", "final"), dicti
         stop(paste("No datetime format provided for column", col, "in table", tbl_name))
       }
       tbl <- tbl %>%
-        dplyr::mutate(across(col, ~format(.x, format = QCkit::convert_datetime_format(format_string, convert_z = FALSE))))
+        dplyr::mutate(dplyr::across(col, ~format(.x, format = QCkit::convert_datetime_format(format_string, convert_z = FALSE))))
     }
     readr::write_csv(tbl,
                      here::here(data_dir, paste0(tbl_name, ".csv")),

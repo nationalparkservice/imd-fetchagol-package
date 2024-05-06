@@ -25,4 +25,5 @@ Imports:
     readr,
     stringr,
     tibble,
+    tidyselect,
     xml2

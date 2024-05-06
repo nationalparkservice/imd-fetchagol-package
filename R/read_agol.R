@@ -222,14 +222,14 @@ fetchLayerAndTableList <- function(url, token) {
   feature_service <- jsonlite::fromJSON(content)
 
   # Get layer id's and names
-  if (hasName(feature_service, "layers") & length(feature_service$layers) > 0) {
+  if (utils::hasName(feature_service, "layers") & length(feature_service$layers) > 0) {
     layers <- dplyr::select(feature_service$layers, id, name)
   } else {
     layers <- tibble::tibble(.rows = 0)
   }
 
   # Get table id's and names
-  if (hasName(feature_service, "tables") & length(feature_service$tables) > 0) {
+  if (utils::hasName(feature_service, "tables") & length(feature_service$tables) > 0) {
     tables <- dplyr::select(feature_service$tables, id, name)
   } else {
     tables <- tibble::tibble(.rows = 0)
@@ -345,12 +345,12 @@ setDataTypesFromMetadata <- function(raw_data) {
     string <- names(col_types[col_types == "string"])
     if (nrow(tbl) > 0) {
       tbl <- dplyr::mutate(tbl,
-                           across(decimal, as.double),
-                           across(integer, as.integer),
-                           across(date, function(x) {as.POSIXct(x/1000, origin = "1970-01-01")}),
-                           across(dateTime, function(x) {as.POSIXct(x/1000, origin = "1970-01-01")}),
-                           across(time, function(x) {as.POSIXct(x/1000, origin = "1970-01-01")}),
-                           across(string, as.character))
+                           dplyr::across(decimal, as.double),
+                           dplyr::across(integer, as.integer),
+                           dplyr::across(date, function(x) {as.POSIXct(x/1000, origin = "1970-01-01")}),
+                           dplyr::across(dateTime, function(x) {as.POSIXct(x/1000, origin = "1970-01-01")}),
+                           dplyr::across(time, function(x) {as.POSIXct(x/1000, origin = "1970-01-01")}),
+                           dplyr::across(string, as.character))
     }
     return(tbl)
   }, simplify = FALSE, USE.NAMES = TRUE)
@@ -390,8 +390,8 @@ cleanData <- function(raw_data , cols_to_remove = c("^objectid$", "CreationDate"
     # }
 
     tbl <- dplyr::mutate(tbl,
-                         dplyr::across(where(is.character), ~trimws(.x, which = "both")),
-                         dplyr::across(where(is.character), ~dplyr::na_if(.x, "")))
+                         dplyr::across(tidyselect::where(is.character), ~trimws(.x, which = "both")),
+                         dplyr::across(tidyselect::where(is.character), ~dplyr::na_if(.x, "")))
     return(tbl)
   })
 
