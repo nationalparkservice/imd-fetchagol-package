@@ -2,6 +2,11 @@ fetchagol README
 ================
 2024-04-16
 
+<!-- badges: start -->
+
+[![R-CMD-check](https://github.com/nationalparkservice/imd-fetchagol-package/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/nationalparkservice/imd-fetchagol-package/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 # About this package
 
 Add info

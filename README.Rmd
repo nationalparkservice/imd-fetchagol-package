@@ -3,6 +3,9 @@ title: "fetchagol README"
 output: github_document
 date: "2024-04-16"
 ---
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/nationalparkservice/imd-fetchagol-package/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/nationalparkservice/imd-fetchagol-package/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
 
 # About this package
 
