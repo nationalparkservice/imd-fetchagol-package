@@ -38,23 +38,23 @@ unit and during the publication process described it as a “customUnit”.
 
 ##### Entity Example
 
-<img src="instructionalFigures/entityInfoExample.PNG" width="100%" alt="Screenshot of how to link a lookup table to an attribute">
+<img src="man/figures/entityInfoExample.PNG" width="100%" alt="Screenshot of how to link a lookup table to an attribute">
 
 ##### String Example
 
-<img src="instructionalFigures/attributeInfoExample1.PNG" width="100%" alt="Screenshot of how to link a lookup table to an attribute">
+<img src="man/figures/attributeInfoExample1.PNG" width="100%" alt="Screenshot of how to link a lookup table to an attribute">
 
 ##### Date Example
 
-<img src="instructionalFigures/attributeInfoExample3.PNG" width="100%" alt="Screenshot of how to link a lookup table to an attribute">
+<img src="man/figures/attributeInfoExample3.PNG" width="100%" alt="Screenshot of how to link a lookup table to an attribute">
 
 ##### Integer Example
 
-<img src="instructionalFigures/attributeInfoExample2.PNG" width="100%" alt="Screenshot of how to link a lookup table to an attribute">
+<img src="man/figures/attributeInfoExample2.PNG" width="100%" alt="Screenshot of how to link a lookup table to an attribute">
 
 ##### Double Example
 
-<img src="instructionalFigures/attributeInfoExample4.PNG" width="100%" alt="Screenshot of how to link a lookup table to an attribute">
+<img src="man/figures/attributeInfoExample4.PNG" width="100%" alt="Screenshot of how to link a lookup table to an attribute">
 
 ### Lookup tables
 
@@ -64,10 +64,10 @@ At the bottom of the information for the attribute select
 table and its link. The lookup table must have a `name` and `label`
 column to generate the metadata CSVs.
 
-<!-- ![Screenshot of how to link a lookup table to an attribute](instructionalFigures/lookupTable.PNG) -->
+<!-- ![Screenshot of how to link a lookup table to an attribute](man/figures/lookupTable.PNG) -->
 <center>
 
-<img src="instructionalFigures/lookupTable.PNG" width="70%" alt="Screenshot of how to link a lookup table to an attribute" class="center">
+<img src="man/figures/lookupTable.PNG" width="70%" alt="Screenshot of how to link a lookup table to an attribute" class="center">
 
 </center>
 
@@ -106,7 +106,7 @@ running `fetchRawData()` again.
 
 <center>
 
-<img src="instructionalFigures/troubleshootExample.PNG" width="50%" alt="Screenshot showing output of troubleshootMetadata function" class="center">
+<img src="man/figures/troubleshootExample.PNG" width="50%" alt="Screenshot showing output of troubleshootMetadata function" class="center">
 
 </center>
 
@@ -129,7 +129,7 @@ running `fetchRawData()` again.
 
 <center>
 
-<img src="instructionalFigures/troubleshootExample2.PNG" width="75%" alt="Screenshot showing output of troubleshootMetadata function with allInfo set to TRUE" class="center">
+<img src="man/figures/troubleshootExample2.PNG" width="75%" alt="Screenshot showing output of troubleshootMetadata function with allInfo set to TRUE" class="center">
 
 </center>
 
