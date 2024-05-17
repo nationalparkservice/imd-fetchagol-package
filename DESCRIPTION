@@ -21,10 +21,12 @@ Imports:
     keyring,
     magrittr,
     purrr,
-    QCkit,
+    QCkit (>= 0.1.7),
     readr,
     stringr,
     tibble,
     tidyselect,
     xml2
 URL: https://nationalparkservice.github.io/imd-fetchagol-package/
+Remotes:  
+    nationalparkservice/QCkit
