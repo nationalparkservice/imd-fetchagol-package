@@ -1,12 +1,32 @@
 Package: fetchagol
-Title: What the Package Does (One Line, Title Case)
+Title: Fetch Data and MetaData from ARCGIS Online (AGOL)
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+  c(person("Sarah", "Wright", email = "sarah_wright@nps.gov", role=c("aut","cre")), 
+           person("Irene", "Foster", email = "irene_foster@partner.nps.gov", role=c("aut"), ,
+           comment = c(ORCID = "0000-0001-9681-4786")))
+Description: Reads data and metadata from an ARCGIS database.
+License: CC0
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
+Imports: 
+    cli,
+    dplyr,
+    glue,
+    hash,
+    here,
+    httr,
+    jsonlite,
+    keyring,
+    magrittr,
+    purrr,
+    QCkit (>= 0.1.7),
+    readr,
+    stringr,
+    tibble,
+    tidyselect,
+    xml2
+URL: https://nationalparkservice.github.io/imd-fetchagol-package/
+Remotes:  
+    nationalparkservice/QCkit
