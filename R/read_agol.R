@@ -318,6 +318,10 @@ fetchRawData <- function(database_url, agol_username, agol_password = keyring::k
   raw_data <- list(data = data,
                    metadata = metadata)
 
+  if(length(raw_data$data) == 0){
+    stop("Data was unable to import. Check that your AGOL password is correct and hasn't expired, your URL is correct, and the database permissions are correct")
+  }
+
   return(raw_data)
 }
 
