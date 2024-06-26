@@ -370,11 +370,13 @@ setDataTypesFromMetadata <- function(raw_data) {
 #' @param raw_data list of tabular data and metadata
 #' @param cols_to_remove a vector containing the names of columns to remove
 #' @param id_replacement_names a vector containing
+#' @param exact Should the columns be matched exactly or should regular expressions be used?
 #'
 #' @return A list containing tabular data and metadata
 #' @export
 #'
-cleanData <- function(raw_data , cols_to_remove = c("^objectid$", "CreationDate", "Creator", "EditDate", "Editor"), id_replacement_names = c("globalid", "objectid", "parentglobalid")) {
+cleanData <- function(raw_data , cols_to_remove = c("^objectid$", "CreationDate", "Creator", "EditDate", "Editor"),
+                      id_replacement_names = c("globalid", "objectid", "parentglobalid"), exact = TRUE) {
   raw_data <- setDataTypesFromMetadata(raw_data)
 
   # Clean up data table columns
@@ -399,7 +401,7 @@ cleanData <- function(raw_data , cols_to_remove = c("^objectid$", "CreationDate"
     return(tbl)
   })
 
-  raw_data <- removeCols(raw_data, cols_to_remove = cols_to_remove)
+  raw_data <- removeCols(raw_data, cols_to_remove = cols_to_remove, exact = exact)
 
   return(raw_data)
 }
