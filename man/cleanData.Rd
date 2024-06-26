@@ -7,7 +7,8 @@
 cleanData(
   raw_data,
   cols_to_remove = c("^objectid$", "CreationDate", "Creator", "EditDate", "Editor"),
-  id_replacement_names = c("globalid", "objectid", "parentglobalid")
+  id_replacement_names = c("globalid", "objectid", "parentglobalid"),
+  exact = TRUE
 )
 }
 \arguments{
@@ -16,6 +17,8 @@ cleanData(
 \item{cols_to_remove}{a vector containing the names of columns to remove}
 
 \item{id_replacement_names}{a vector containing}
+
+\item{exact}{Should the columns be matched exactly or should regular expressions be used?}
 }
 \value{
 A list containing tabular data and metadata

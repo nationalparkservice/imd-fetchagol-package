@@ -122,11 +122,11 @@ metadata, there still might be problems in the metadata. There could be
 problems even if the data and metadata successfully write to CSVs. At
 this point the problems would probably be missing or incorrect metadata
 in a field other than the column name field such as definition, class,
-or unit. Running `troubleshootMetadat()` with the parameter
+or unit. Running `troubleshootMetadata()` with the parameter
 `allInfo = TRUE` can help expose certain problems such as a missing
 definition, a non-valid class, or an integer or double with no unit. In
 the example below the data and metadata successfully wrote to CSVs.
-However, after running `troubleshootMetadat(all_data, allInfo = TRUE)`
+However, after running `troubleshootMetadata(all_data, allInfo = TRUE)`
 we can see that there is a missing definition, a non-valid metadata
 class, and an integer with a missing unit. To fix these problems go into
 the data table on AGOL, fix the problems, and re-import the data by
