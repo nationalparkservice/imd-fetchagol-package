@@ -407,6 +407,9 @@ cleanData <- function(raw_data , cols_to_remove = c("^objectid$", "CreationDate"
 }
 
 fetchHostedCSV <- function(item_id, token, root = "nps.maps.arcgis.com") {
+  if (is.null(item_id) || length(item_id) == 0) {
+    cli::cli_abort("Missing item ID")
+  }
   url <- paste0("https://", root, "/sharing/rest/content/items/", item_id, "/data")
   resp <- httr::GET(url, query = list(token = token$token))
   content <- httr::content(resp, type = "text/csv", encoding = "UTF-8")
