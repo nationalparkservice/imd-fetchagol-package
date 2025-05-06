@@ -2,7 +2,7 @@ pandoc: 3.1.11
 pkgdown: 2.1.2
 pkgdown_sha: ~
 articles: {}
-last_built: 2025-05-06T18:42Z
+last_built: 2025-05-06T18:44Z
 urls:
   reference: https://nationalparkservice.github.io/imd-fetchagol-package/reference
   article: https://nationalparkservice.github.io/imd-fetchagol-package/articles
