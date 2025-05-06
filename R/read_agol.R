@@ -17,18 +17,20 @@ pkg_globals <- new.env(parent = emptyenv())
 #' @export
 #'
 fetchAGOLToken <- function(agol_username, agol_password = keyring::key_get(service = "AGOL", username = agol_username), root = "nps.maps.arcgis.com", referer = "https://irma.nps.gov") {
-
   url <- paste0("https://", root, "/sharing/rest/generateToken")
 
   # Get a token with a headless account
   token_resp <- httr::POST(url,
-                           body = list(username = agol_username,
-                                       password = agol_password,
-                                       expiration = 60,
-                                       referer = referer,
-                                       f = 'json'),
-                           encode = "form")
-  agol_token <- jsonlite::fromJSON(httr::content(token_resp, type="text", encoding = "UTF-8"))
+    body = list(
+      username = agol_username,
+      password = agol_password,
+      expiration = 60,
+      referer = referer,
+      f = "json"
+    ),
+    encode = "form"
+  )
+  agol_token <- jsonlite::fromJSON(httr::content(token_resp, type = "text", encoding = "UTF-8"))
 
   return(agol_token)
 }
@@ -52,24 +54,27 @@ fetchAllRecords <- function(data_path, layer_number, token, geometry = FALSE, wh
   exc_transfer <- TRUE
   offset <- nrow(result)
 
-  qry <- list(where = where,
-              outFields = outFields,
-              f = "JSON",
-              resultOffset = offset)
+  qry <- list(
+    where = where,
+    outFields = outFields,
+    f = "JSON",
+    resultOffset = offset
+  )
 
   if (!missing(token)) {
     qry$token <- token$token
   }
 
-  while(exc_transfer) {
+  while (exc_transfer) {
     resp <- httr::GET(paste0(data_path, "/", layer_number, "/query"),
-                      query = qry)
+      query = qry
+    )
 
     content <- jsonlite::fromJSON(httr::content(resp, type = "text", encoding = "UTF-8"))
 
     if ("error" %in% names(content)) {
       message <- glue::glue("Error code {content$error$code}: {content$error$message}")
-      if ((content$error$message != content$error$details) && (content$error$details != '')) {
+      if ((content$error$message != content$error$details) && (content$error$details != "")) {
         message <- c(message, glue::glue("Details: {content$error$details}"))
       }
       names(message) <- rep("x", length(message))
@@ -85,8 +90,8 @@ fetchAllRecords <- function(data_path, layer_number, token, geometry = FALSE, wh
     # TODO: make it so line and polygon data are imported correctly with geometry data
     if (geometry) {
       partial_result <- cbind(content$features$attributes, content$features$geometry) %>%
-      dplyr::mutate(wkid = content$spatialReference$wkid) %>%
-      tibble::as_tibble()
+        dplyr::mutate(wkid = content$spatialReference$wkid) %>%
+        tibble::as_tibble()
     } else {
       partial_result <- tibble::as_tibble(content$features$attributes)
     }
@@ -109,7 +114,6 @@ fetchAllRecords <- function(data_path, layer_number, token, geometry = FALSE, wh
 #' @export
 #'
 fetchMetadata <- function(url, token, layer_number) {
-
   if (!missing(layer_number)) {
     url <- paste0(url, "/", layer_number, "/metadata")
   } else {
@@ -119,9 +123,12 @@ fetchMetadata <- function(url, token, layer_number) {
   # Get metadata
   if (!missing(token)) {
     resp <- httr::GET(url,
-                      query = list(token = token$token,
-                                   format = "fgdc",
-                                   f = "xml"))
+      query = list(
+        token = token$token,
+        format = "fgdc",
+        f = "xml"
+      )
+    )
   } else {
     resp <- httr::GET(url)
   }
@@ -144,14 +151,19 @@ wrangleLayerMetadata <- function(raw_meta, token) {
   fields <- lapply(raw_meta$eainfo$detailed[2:length(raw_meta$eainfo$detailed)], function(field) {
     field_name <- field$attrlabl[[1]]
     desc <- parseAttrDef(field$attrdef[[1]])
-    try({
-      lookup_name <- trimws(field$attrdomv$codesetd$codesetn[[1]])
-      lookup_url <- trimws(field$attrdomv$codesetd$codesets[[1]])
-      lookup_df <- fetchHostedCSV(stringr::str_remove(lookup_url, "^.*?id="), token)
-      desc$lookup <- list(lookup_name = lookup_name,
-                          lookup_url = lookup_url,
-                          lookup_df = lookup_df)
-    }, silent = TRUE)
+    try(
+      {
+        lookup_name <- trimws(field$attrdomv$codesetd$codesetn[[1]])
+        lookup_url <- trimws(field$attrdomv$codesetd$codesets[[1]])
+        lookup_df <- fetchHostedCSV(stringr::str_remove(lookup_url, "^.*?id="), token)
+        desc$lookup <- list(
+          lookup_name = lookup_name,
+          lookup_url = lookup_url,
+          lookup_df = lookup_df
+        )
+      },
+      silent = TRUE
+    )
     item_meta <- list()
     item_meta[[field_name]] <- desc
     return(item_meta)
@@ -164,9 +176,11 @@ wrangleLayerMetadata <- function(raw_meta, token) {
   table_name <- trimws(raw_meta$eainfo$detailed[1]$enttyp$enttypl[[1]])
   table_desc <- trimws(raw_meta$eainfo$detailed[1]$enttyp$enttypd[[1]])
 
-  meta <- list(table_name = table_name,
-               table_description = table_desc,
-               fields = fields)
+  meta <- list(
+    table_name = table_name,
+    table_description = table_desc,
+    fields = fields
+  )
 
   return(meta)
 }
@@ -190,8 +204,10 @@ parseAttrDef <- function(def) {
       attrs[[name_value[1]]] <- name_value[2]
     }
   }
-  def_list <- list(description = description,
-                   attributes = attrs)
+  def_list <- list(
+    description = description,
+    attributes = attrs
+  )
 
   return(def_list)
 }
@@ -207,7 +223,6 @@ parseAttrDef <- function(def) {
 #' @export
 #'
 fetchLayerAndTableList <- function(url, token) {
-
   qry <- list(f = "json")
 
   # Get feature service info
@@ -216,7 +231,8 @@ fetchLayerAndTableList <- function(url, token) {
   }
 
   resp <- httr::GET(url,
-                    query = qry)
+    query = qry
+  )
 
   content <- httr::content(resp, type = "text/json", encoding = "UTF-8")
   feature_service <- jsonlite::fromJSON(content)
@@ -257,30 +273,59 @@ fetchRawData <- function(database_url, agol_username, agol_password = keyring::k
   names(ids) <- layers_tables$name
 
   # Catches errors when metadata can't be imported
-  metadata <- tryCatch({
-    # Import metadata
-    metadata <- sapply(ids, function(id) {
-      meta <- fetchMetadata(database_url, token, id)
-      meta[["table_id"]] <- id
-      return(meta)
-    }, simplify = FALSE, USE.NAMES = TRUE)
+  metadata <- tryCatch(
+    {
+      # Import metadata
+      metadata <- sapply(ids, function(id) {
+        meta <- fetchMetadata(database_url, token, id)
+        meta[["table_id"]] <- id
+        return(meta)
+      }, simplify = FALSE, USE.NAMES = TRUE)
 
-    # If metadata was unable to import
-  }, error = function(e) {
-    message("Unable to import metadata - make sure it is filled out")
-    print(paste0("Error message: ", e))
+      # If metadata was unable to import
+    },
+    error = function(e) {
+      message("Unable to import metadata - make sure it is filled out")
+      print(paste0("Error message: ", e))
 
-    metadata = list()})
+      metadata <- list()
+    }
+  )
 
 
   # Catches errors from incorrect queries
-  data <- tryCatch({
-    # If metadata didn't import - import data tables without using metadata
-    if(length(metadata) == 0){
-      message("Importing data tables with no metadata")
+  data <- tryCatch(
+    {
+      # If metadata didn't import - import data tables without using metadata
+      if (length(metadata) == 0) {
+        message("Importing data tables with no metadata")
+
+        # Import data tables without using metadata info
+        data <- sapply(layers_tables$id, function(id) {
+          data_table <- fetchAllRecords(database_url, id, token)
+          return(data_table)
+        }, simplify = FALSE, USE.NAMES = TRUE)
+
+        # Assign data layers correct names
+        names(data) <- layers_tables$name
+
+        data
+      } else {
+        # If metadata did import - try to import data using metadata info
+        data <- sapply(metadata, function(meta) {
+          data_table <- fetchAllRecords(database_url, meta$table_id, token, outFields = paste(names(meta$fields), collapse = ",")) %>%
+            dplyr::select(dplyr::any_of(names(meta$fields)))
+          return(data_table)
+        }, simplify = FALSE, USE.NAMES = TRUE)
+      }
+    },
+    error = function(e) {
+      message("Querying data using metadata failed - try calling troubleshootMetadata() to find problem")
+      print(paste0("Error message: ", e))
+      message("Importing data tables without using metadata")
 
       # Import data tables without using metadata info
-      data <- sapply(layers_tables$id, function(id){
+      data <- sapply(layers_tables$id, function(id) {
         data_table <- fetchAllRecords(database_url, id, token)
         return(data_table)
       }, simplify = FALSE, USE.NAMES = TRUE)
@@ -288,35 +333,18 @@ fetchRawData <- function(database_url, agol_username, agol_password = keyring::k
       # Assign data layers correct names
       names(data) <- layers_tables$name
 
-      data
-    } else{
-    # If metadata did import - try to import data using metadata info
-    data <- sapply(metadata, function(meta){
-      data_table <- fetchAllRecords(database_url, meta$table_id, token, outFields = paste(names(meta$fields), collapse = ",")) %>%
-        dplyr::select(dplyr::any_of(names(meta$fields)))
-      return(data_table)
-    }, simplify = FALSE, USE.NAMES = TRUE)}
+      return(data)
+    }
+  )
 
-  }, error = function(e){
+  raw_data <- list(
+    data = data,
+    metadata = metadata
+  )
 
-    message("Querying data using metadata failed - try calling troubleshootMetadata() to find problem")
-    print(paste0("Error message: ", e))
-    message("Importing data tables without using metadata")
-
-    # Import data tables without using metadata info
-    data <- sapply(layers_tables$id, function(id){
-      data_table <- fetchAllRecords(database_url, id, token)
-      return(data_table)
-    }, simplify = FALSE, USE.NAMES = TRUE)
-
-    # Assign data layers correct names
-    names(data) <- layers_tables$name
-
-    return(data)
-  })
-
-  raw_data <- list(data = data,
-                   metadata = metadata)
+  if (length(raw_data$data) == 0) {
+    stop("Data was unable to import. Check that your AGOL password is correct and hasn't expired, your URL is correct, and the database permissions are correct")
+  }
 
   return(raw_data)
 }
@@ -344,13 +372,21 @@ setDataTypesFromMetadata <- function(raw_data) {
     time <- names(col_types[col_types == "time"])
     string <- names(col_types[col_types == "string"])
     if (nrow(tbl) > 0) {
-      tbl <- dplyr::mutate(tbl,
-                           dplyr::across(decimal, as.double),
-                           dplyr::across(integer, as.integer),
-                           dplyr::across(date, function(x) {as.POSIXct(x/1000, origin = "1970-01-01")}),
-                           dplyr::across(dateTime, function(x) {as.POSIXct(x/1000, origin = "1970-01-01")}),
-                           dplyr::across(time, function(x) {as.POSIXct(x/1000, origin = "1970-01-01")}),
-                           dplyr::across(string, as.character))
+      tbl <- dplyr::mutate(
+        tbl,
+        dplyr::across(decimal, as.double),
+        dplyr::across(integer, as.integer),
+        dplyr::across(date, function(x) {
+          as.POSIXct(x / 1000, origin = "1970-01-01")
+        }),
+        dplyr::across(dateTime, function(x) {
+          as.POSIXct(x / 1000, origin = "1970-01-01")
+        }),
+        dplyr::across(time, function(x) {
+          as.POSIXct(x / 1000, origin = "1970-01-01")
+        }),
+        dplyr::across(string, as.character)
+      )
     }
     return(tbl)
   }, simplify = FALSE, USE.NAMES = TRUE)
@@ -366,11 +402,13 @@ setDataTypesFromMetadata <- function(raw_data) {
 #' @param raw_data list of tabular data and metadata
 #' @param cols_to_remove a vector containing the names of columns to remove
 #' @param id_replacement_names a vector containing
+#' @param exact Should the columns be matched exactly or should regular expressions be used?
 #'
 #' @return A list containing tabular data and metadata
 #' @export
 #'
-cleanData <- function(raw_data , cols_to_remove = c("^objectid$", "CreationDate", "Creator", "EditDate", "Editor"), id_replacement_names = c("globalid", "objectid", "parentglobalid")) {
+cleanData <- function(raw_data, cols_to_remove = c("^objectid$", "CreationDate", "Creator", "EditDate", "Editor"),
+                      id_replacement_names = c("globalid", "objectid", "parentglobalid"), exact = TRUE) {
   raw_data <- setDataTypesFromMetadata(raw_data)
 
   # Clean up data table columns
@@ -389,18 +427,23 @@ cleanData <- function(raw_data , cols_to_remove = c("^objectid$", "CreationDate"
     #   tbl <- dplyr::select(tbl, -remove)
     # }
 
-    tbl <- dplyr::mutate(tbl,
-                         dplyr::across(tidyselect::where(is.character), ~trimws(.x, which = "both")),
-                         dplyr::across(tidyselect::where(is.character), ~dplyr::na_if(.x, "")))
+    tbl <- dplyr::mutate(
+      tbl,
+      dplyr::across(tidyselect::where(is.character), ~ trimws(.x, which = "both")),
+      dplyr::across(tidyselect::where(is.character), ~ dplyr::na_if(.x, ""))
+    )
     return(tbl)
   })
 
-  raw_data <- removeCols(raw_data, cols_to_remove = cols_to_remove)
+  raw_data <- removeCols(raw_data, cols_to_remove = cols_to_remove, exact = exact)
 
   return(raw_data)
 }
 
 fetchHostedCSV <- function(item_id, token, root = "nps.maps.arcgis.com") {
+  if (is.null(item_id) || length(item_id) == 0) {
+    cli::cli_abort("Missing item ID")
+  }
   url <- paste0("https://", root, "/sharing/rest/content/items/", item_id, "/data")
   resp <- httr::GET(url, query = list(token = token$token))
   content <- httr::content(resp, type = "text/csv", encoding = "UTF-8")
@@ -416,35 +459,39 @@ fetchHostedCSV <- function(item_id, token, root = "nps.maps.arcgis.com") {
 #' @param exact Should the columns be matched exactly or should regular expressions be used?
 #'
 removeCols <- function(all_data, cols_to_remove = c("CreationDate", "Creator", "EditDate", "Editor"), exact = TRUE) {
-
   # Remove variables using exact matches
-  if(exact){
-    print("Removing columns using exact matching")
+  if (exact) {
+    cli::cli_inform("Removing columns {.field {cols_to_remove}} using exact matching")
     # Remove specified attributes from data tables
-    all_data$data <- lapply(all_data$data, function(table){
+    all_data$data <- lapply(all_data$data, function(table) {
       table <- table[, names(table) %in% cols_to_remove == FALSE]
     })
 
     # Remove specified attributes from metadata info
-    all_data$metadata <- lapply(all_data$metadata, function(table){
+    all_data$metadata <- lapply(all_data$metadata, function(table) {
       table$fields <- table$fields[names(table$fields) %in% cols_to_remove == FALSE]
       return(table)
-    })}
+    })
+  }
   # Remove variables using regular expressions
-  else{
-    print("Removing columns using regular expressions")
+  else {
+    cli::cli_inform("Removing columns using regular expressions...")
     # Remove specified attributes from data tables
-    all_data$data <- lapply(all_data$data, function(table){
+    all_data$data <- lapply(all_data$data, function(table) {
       table2 <- table %>%
         # Remove columns with names that are in the columns to remove vector
-        dplyr::select(-grep(paste(cols_to_remove,collapse="|"), names(table), ignore.case = TRUE))
+        dplyr::select(-grep(paste(cols_to_remove, collapse = "|"), names(table), ignore.case = TRUE))
     })
-
+    cols_removed <- c()
     # Remove specified attributes from metadata info
-    all_data$metadata <- lapply(all_data$metadata, function(table){
-      table$fields <- table$fields[-grep(paste(cols_to_remove,collapse="|"), names(table$fields), ignore.case = TRUE)]
+    all_data$metadata <- lapply(all_data$metadata, function(table) {
+      removed <- grep(paste(cols_to_remove, collapse = "|"), names(table$fields), ignore.case = TRUE)
+      table$fields <- table$fields[-removed]
+      cols_removed <- c(cols_removed, removed)
       return(table)
     })
+
+    cli::cli_inform("Removed columns {field {cols_removed}}.")
   }
 
   return(all_data)
@@ -462,14 +509,13 @@ removeCols <- function(all_data, cols_to_remove = c("CreationDate", "Creator", "
 #'
 #' @returns list of dfs containing data and metadata column names
 #' @export
-troubleshootMetadata <- function(all_data, returnAll = FALSE, allInfo = FALSE){
-
+troubleshootMetadata <- function(all_data, returnAll = FALSE, allInfo = FALSE) {
   # Vector of valid EML types
   classList <- c("string", "integer", "decimal", "datetime", "date", "time")
 
   results <- list()
 
-  results <- sapply(names(all_data$data), function(table){
+  results <- sapply(names(all_data$data), function(table) {
     print(table)
     # Create a new data frame using the extracted data column names
     dataNames <- data.frame(dataColumnNames = colnames(all_data$data[[table]]))
@@ -478,7 +524,7 @@ troubleshootMetadata <- function(all_data, returnAll = FALSE, allInfo = FALSE){
     metadataNames <- data.frame(metadataColumnNames = names(all_data$metadata[[table]]$fields))
 
     # To return all metadata info
-    if(allInfo){
+    if (allInfo) {
       # Extract definition from metadata
       metadataNames$metadataDef <- sapply(all_data$metadata[[table]]$fields, "[[", 1)
 
@@ -496,11 +542,11 @@ troubleshootMetadata <- function(all_data, returnAll = FALSE, allInfo = FALSE){
       replace(. == "NULL" | is.null(.), NA_character_)
 
     # To only return the column names without matches
-    if(!returnAll){
-      if(allInfo){
-      joined_data <- joined_data %>%
-        dplyr::filter(is.na(dataColumnNames) | is.na(metadataColumnNames) | is.na(metadataDef) | metadataDef == "" | is.na(metadataClass) | !(tolower(metadataClass) %in% classList) | ((tolower(metadataClass) == "integer" | tolower(metadataClass) == "decimal") & is.na(metadataUnit)))
-      } else{
+    if (!returnAll) {
+      if (allInfo) {
+        joined_data <- joined_data %>%
+          dplyr::filter(is.na(dataColumnNames) | is.na(metadataColumnNames) | is.na(metadataDef) | metadataDef == "" | is.na(metadataClass) | !(tolower(metadataClass) %in% classList) | ((tolower(metadataClass) == "integer" | tolower(metadataClass) == "decimal") & is.na(metadataUnit)))
+      } else {
         joined_data <- joined_data %>%
           # Filter only for for N
           dplyr::filter(is.na(dataColumnNames) | is.na(metadataColumnNames))
