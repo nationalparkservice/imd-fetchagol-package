@@ -1,54 +1,20 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://nationalparkservice.github.io/imd-fetchagol-package/404.html</loc>
-  </url>
-  <url>
-    <loc>https://nationalparkservice.github.io/imd-fetchagol-package/LICENSE.html</loc>
-  </url>
-  <url>
-    <loc>https://nationalparkservice.github.io/imd-fetchagol-package/authors.html</loc>
-  </url>
-  <url>
-    <loc>https://nationalparkservice.github.io/imd-fetchagol-package/index.html</loc>
-  </url>
-  <url>
-    <loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/cleanData.html</loc>
-  </url>
-  <url>
-    <loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/fetchAGOLToken.html</loc>
-  </url>
-  <url>
-    <loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/fetchAllRecords.html</loc>
-  </url>
-  <url>
-    <loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/fetchLayerAndTableList.html</loc>
-  </url>
-  <url>
-    <loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/fetchMetadata.html</loc>
-  </url>
-  <url>
-    <loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/fetchRawData.html</loc>
-  </url>
-  <url>
-    <loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/generateMetadataCSVs.html</loc>
-  </url>
-  <url>
-    <loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/index.html</loc>
-  </url>
-  <url>
-    <loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/makeColSpec.html</loc>
-  </url>
-  <url>
-    <loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/removeCols.html</loc>
-  </url>
-  <url>
-    <loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/setDataTypesFromMetadata.html</loc>
-  </url>
-  <url>
-    <loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/troubleshootMetadata.html</loc>
-  </url>
-  <url>
-    <loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/writeToFiles.html</loc>
-  </url>
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>https://nationalparkservice.github.io/imd-fetchagol-package/404.html</loc></url>
+<url><loc>https://nationalparkservice.github.io/imd-fetchagol-package/LICENSE.html</loc></url>
+<url><loc>https://nationalparkservice.github.io/imd-fetchagol-package/authors.html</loc></url>
+<url><loc>https://nationalparkservice.github.io/imd-fetchagol-package/index.html</loc></url>
+<url><loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/cleanData.html</loc></url>
+<url><loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/fetchAGOLToken.html</loc></url>
+<url><loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/fetchAllRecords.html</loc></url>
+<url><loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/fetchLayerAndTableList.html</loc></url>
+<url><loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/fetchMetadata.html</loc></url>
+<url><loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/fetchRawData.html</loc></url>
+<url><loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/generateMetadataCSVs.html</loc></url>
+<url><loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/index.html</loc></url>
+<url><loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/makeColSpec.html</loc></url>
+<url><loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/removeCols.html</loc></url>
+<url><loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/setDataTypesFromMetadata.html</loc></url>
+<url><loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/troubleshootMetadata.html</loc></url>
+<url><loc>https://nationalparkservice.github.io/imd-fetchagol-package/reference/writeToFiles.html</loc></url>
 </urlset>
+
