@@ -7,7 +7,8 @@
 fetchRawData(
   database_url,
   agol_username,
-  agol_password = keyring::key_get(service = "AGOL", username = agol_username)
+  agol_password = keyring::key_get(service = "AGOL", username = agol_username),
+  geometry = TRUE
 )
 }
 \arguments{
@@ -16,6 +17,8 @@ fetchRawData(
 \item{agol_username}{AGOL headless account username}
 
 \item{agol_password}{AGOL headless account password (do not hard code this into your scripts!)}
+
+\item{geometry}{Include spatial data?}
 }
 \value{
 A list containing tabular data and metadata

@@ -88,7 +88,8 @@ fetchAllRecords <- function(data_path, layer_number, token, geometry = FALSE, wh
     }
 
     # TODO: make it so line and polygon data are imported correctly with geometry data
-    if (geometry) {
+    if (geometry && !is.null(content$geometryType)) {
+      cat("attr: ", nrow(content$features$attributes), ", geom: ", nrow(content$features$geometry))
       partial_result <- cbind(content$features$attributes, content$features$geometry) %>%
         dplyr::mutate(wkid = content$spatialReference$wkid) %>%
         tibble::as_tibble()
@@ -262,11 +263,12 @@ fetchLayerAndTableList <- function(url, token) {
 #' @param database_url Feature service URL
 #' @param agol_username AGOL headless account username
 #' @param agol_password AGOL headless account password (do not hard code this into your scripts!)
+#' @param geometry Include spatial data?
 #'
 #' @return A list containing tabular data and metadata
 #' @export
 #'
-fetchRawData <- function(database_url, agol_username, agol_password = keyring::key_get(service = "AGOL", username = agol_username)) {
+fetchRawData <- function(database_url, agol_username, agol_password = keyring::key_get(service = "AGOL", username = agol_username), geometry = TRUE) {
   token <- fetchAGOLToken(agol_username, agol_password)
   layers_tables <- fetchLayerAndTableList(database_url, token)
   ids <- layers_tables$id
@@ -302,7 +304,7 @@ fetchRawData <- function(database_url, agol_username, agol_password = keyring::k
 
         # Import data tables without using metadata info
         data <- sapply(layers_tables$id, function(id) {
-          data_table <- fetchAllRecords(database_url, id, token)
+          data_table <- fetchAllRecords(database_url, id, token, geometry = geometry)
           return(data_table)
         }, simplify = FALSE, USE.NAMES = TRUE)
 
@@ -313,7 +315,7 @@ fetchRawData <- function(database_url, agol_username, agol_password = keyring::k
       } else {
         # If metadata did import - try to import data using metadata info
         data <- sapply(metadata, function(meta) {
-          data_table <- fetchAllRecords(database_url, meta$table_id, token, outFields = paste(names(meta$fields), collapse = ",")) %>%
+          data_table <- fetchAllRecords(database_url, meta$table_id, token, outFields = paste(names(meta$fields), collapse = ","), geometry = geometry) %>%
             dplyr::select(dplyr::any_of(names(meta$fields)))
           return(data_table)
         }, simplify = FALSE, USE.NAMES = TRUE)
@@ -326,7 +328,7 @@ fetchRawData <- function(database_url, agol_username, agol_password = keyring::k
 
       # Import data tables without using metadata info
       data <- sapply(layers_tables$id, function(id) {
-        data_table <- fetchAllRecords(database_url, id, token)
+        data_table <- fetchAllRecords(database_url, id, token, geometry = geometry)
         return(data_table)
       }, simplify = FALSE, USE.NAMES = TRUE)
 
@@ -451,8 +453,69 @@ fetchHostedCSV <- function(item_id, token, root = "nps.maps.arcgis.com") {
   return(content)
 }
 
+#' Download a public file from AGOL
+#'
+#' @inheritParams fetchItemInfo
+#' @param download_path The folder path where the downloaded file should be saved
+#'
+#' @returns The file path of the downloaded file
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#'   fetchPublicHostedFile("31b357c26700467792cfb5f7778d72ea", "./my_files")
+#' }
+#'
+fetchPublicHostedFile <- function(item_id, download_path = ".", root = "nps.maps.arcgis.com") {
+  if (is.null(item_id) || length(item_id) == 0) {
+    cli::cli_abort("Missing item ID")
+  }
+  url <- paste0("https://", root, "/sharing/rest/content/items")
+  req_info <- httr2::request(url) %>%
+    httr2::req_url_path_append(item_id) %>%
+    httr2::req_url_query(f = "json") %>%
+    httr2::req_perform()
 
-#' A function to remove specified columns and associated metadata
+  item_info <- httr2::resp_body_json(req_info)
+  download_location <- file.path(download_path, item_info$name)
+
+  req_download <- req_info <- httr2::request(url) %>%
+    httr2::req_url_path_append(item_id, "data") %>%
+    httr2::req_url_query(f = "unchanged") %>%
+    httr2::req_perform(path = download_location)
+
+  return(download_location)
+}
+
+#' Fetch information about any AGOL item
+#'
+#' @param item_id The unique item ID, found in the URL after "id="
+#' @inheritParams fetchAGOLToken
+#'
+#' @returns A list containing the item information
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#'   info <- fetchItemInfo("373a421a19564b0996ff30d554be964b")
+#' }
+#'
+fetchItemInfo <- function(item_id, root = "nps.maps.arcgis.com") {
+  if (is.null(item_id) || length(item_id) == 0) {
+    cli::cli_abort("Missing item ID")
+  }
+  url <- paste0("https://", root, "/sharing/rest/content/items")
+  req_info <- httr2::request(url) %>%
+    httr2::req_url_path_append(item_id) %>%
+    httr2::req_url_query(f = "json") %>%
+    httr2::req_perform()
+
+  item_info <- httr2::resp_body_json(req_info)
+
+  return(item_info)
+}
+
+#' Remove specified columns and associated metadata
 #
 #' @param all_data list of tabular data and metadata
 #' @param cols_to_remove a vector containing the names of columns to remove (default is creator and editor columns)
