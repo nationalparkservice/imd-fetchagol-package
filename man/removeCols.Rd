@@ -2,7 +2,7 @@
 % Please edit documentation in R/read_agol.R
 \name{removeCols}
 \alias{removeCols}
-\title{A function to remove specified columns and associated metadata}
+\title{Remove specified columns and associated metadata}
 \usage{
 removeCols(
   all_data,
@@ -18,5 +18,5 @@ removeCols(
 \item{exact}{Should the columns be matched exactly or should regular expressions be used?}
 }
 \description{
-A function to remove specified columns and associated metadata
+Remove specified columns and associated metadata
 }
