@@ -1,6 +1,6 @@
 Package: fetchagol
 Title: Fetch Data and MetaData from ARCGIS Online (AGOL)
-Version: 0.0.0.9000
+Version: 0.0.0.9001
 Authors@R: 
   c(person("Sarah", "Wright", email = "sarah_wright@nps.gov", role=c("aut","cre")), 
            person("Irene", "Foster", email = "irene_foster@partner.nps.gov", role=c("aut"), ,
