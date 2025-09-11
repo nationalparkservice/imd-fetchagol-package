@@ -1,6 +1,6 @@
 #' Download AGOL attachments (JPG or PNG)
 #'
-#' Currently only works with jpeg or png images.
+#' Currently only works with jpeg or png images. Currently does not handle large (>2000 records) datasets.
 #'
 #' @param feature_layer_url URL of the feature layer containing attachments (including layer ID). *Do not* include a slash at the end.
 #' @param agol_username AGOL username for a headless account with permissions to view the feature layer.
@@ -43,6 +43,7 @@ downloadPhotos <- function(feature_layer_url, agol_username, agol_password = key
                            encode = "form")
   agol_token <- jsonlite::fromJSON(httr::content(token_resp, type="text", encoding = "UTF-8"))
 
+  # TODO: modify this to handle datasets with more records than the API transfer limit
   # Get attachment table data
   data <- httr::GET(paste0(feature_layer_url, "/query"),
                     query = list(where="1=1",
