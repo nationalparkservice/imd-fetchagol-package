@@ -373,9 +373,9 @@ setDataTypesFromMetadata <- function(raw_data) {
     dateTime <- names(col_types[col_types == "dateTime"])
     time <- names(col_types[col_types == "time"])
     string <- names(col_types[col_types == "string"])
+
     if (nrow(tbl) > 0) {
-      tbl <- dplyr::mutate(
-        tbl,
+      tbl <- dplyr::mutate(tbl,
         dplyr::across(decimal, as.double),
         dplyr::across(integer, as.integer),
         dplyr::across(date, function(x) {
