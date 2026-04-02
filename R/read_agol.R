@@ -414,7 +414,7 @@ cleanData <- function(raw_data, cols_to_remove = c("^objectid$", "CreationDate",
   raw_data <- setDataTypesFromMetadata(raw_data)
 
   # Clean up data table columns
-  raw_data$data <- sapply(raw_data$data, function(tbl) {
+  raw_data$data <- lapply(raw_data$data, function(tbl) {
     # Fix case in id col names
     global_id <- grepl("^globalid$", names(tbl), ignore.case = TRUE)
     object_id <- grepl("^objectid$", names(tbl), ignore.case = TRUE)
