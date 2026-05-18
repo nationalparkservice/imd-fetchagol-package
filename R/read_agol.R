@@ -21,14 +21,14 @@ fetchAGOLToken <- function(agol_username, agol_password = keyring::key_get(servi
 
   # Get a token with a headless account
   token_resp <- httr::POST(url,
-    body = list(
-      username = agol_username,
-      password = agol_password,
-      expiration = 60,
-      referer = referer,
-      f = "json"
-    ),
-    encode = "form"
+                           body = list(
+                             username = agol_username,
+                             password = agol_password,
+                             expiration = 60,
+                             referer = referer,
+                             f = "json"
+                           ),
+                           encode = "form"
   )
   agol_token <- jsonlite::fromJSON(httr::content(token_resp, type = "text", encoding = "UTF-8"))
 
@@ -67,7 +67,7 @@ fetchAllRecords <- function(data_path, layer_number, token, geometry = FALSE, wh
 
   while (exc_transfer) {
     resp <- httr::GET(paste0(data_path, "/", layer_number, "/query"),
-      query = qry
+                      query = qry
     )
 
     content <- jsonlite::fromJSON(httr::content(resp, type = "text", encoding = "UTF-8"))
@@ -124,11 +124,11 @@ fetchMetadata <- function(url, token, layer_number) {
   # Get metadata
   if (!missing(token)) {
     resp <- httr::GET(url,
-      query = list(
-        token = token$token,
-        format = "fgdc",
-        f = "xml"
-      )
+                      query = list(
+                        token = token$token,
+                        format = "fgdc",
+                        f = "xml"
+                      )
     )
   } else {
     resp <- httr::GET(url)
@@ -232,7 +232,7 @@ fetchLayerAndTableList <- function(url, token) {
   }
 
   resp <- httr::GET(url,
-    query = qry
+                    query = qry
   )
 
   content <- httr::content(resp, type = "text/json", encoding = "UTF-8")
@@ -264,36 +264,40 @@ fetchLayerAndTableList <- function(url, token) {
 #' @param agol_username AGOL headless account username
 #' @param agol_password AGOL headless account password (do not hard code this into your scripts!)
 #' @param geometry Include spatial data?
+#' @param include_metadata Retrieve metadata from AGOL along with the data?
 #'
 #' @return A list containing tabular data and metadata
 #' @export
 #'
-fetchRawData <- function(database_url, agol_username, agol_password = keyring::key_get(service = "AGOL", username = agol_username), geometry = TRUE) {
+fetchRawData <- function(database_url, agol_username, agol_password = keyring::key_get(service = "AGOL", username = agol_username), geometry = TRUE, include_metadata = TRUE) {
   token <- fetchAGOLToken(agol_username, agol_password)
   layers_tables <- fetchLayerAndTableList(database_url, token)
   ids <- layers_tables$id
   names(ids) <- layers_tables$name
 
-  # Catches errors when metadata can't be imported
-  metadata <- tryCatch(
-    {
-      # Import metadata
-      metadata <- sapply(ids, function(id) {
-        meta <- fetchMetadata(database_url, token, id)
-        meta[["table_id"]] <- id
-        return(meta)
-      }, simplify = FALSE, USE.NAMES = TRUE)
+  if (include_metadata) {
+    # Catches errors when metadata can't be imported
+    metadata <- tryCatch(
+      {
+        # Import metadata
+        metadata <- sapply(ids, function(id) {
+          meta <- fetchMetadata(database_url, token, id)
+          meta[["table_id"]] <- id
+          return(meta)
+        }, simplify = FALSE, USE.NAMES = TRUE)
 
-      # If metadata was unable to import
-    },
-    error = function(e) {
-      message("Unable to import metadata - make sure it is filled out")
-      print(paste0("Error message: ", e))
+        # If metadata was unable to import
+      },
+      error = function(e) {
+        message("Unable to import metadata - make sure it is filled out")
+        print(paste0("Error message: ", e))
 
-      metadata <- list()
-    }
-  )
-
+        metadata <- list()
+      }
+    )
+  } else {
+    metadata <- list()
+  }
 
   # Catches errors from incorrect queries
   data <- tryCatch(
@@ -411,7 +415,10 @@ setDataTypesFromMetadata <- function(raw_data) {
 #'
 cleanData <- function(raw_data, cols_to_remove = c("^objectid$", "CreationDate", "Creator", "EditDate", "Editor"),
                       id_replacement_names = c("globalid", "objectid", "parentglobalid"), exact = TRUE) {
-  raw_data <- setDataTypesFromMetadata(raw_data)
+
+  if (length(raw_data$metadata) > 0) {
+    raw_data <- setDataTypesFromMetadata(raw_data)
+  }
 
   # Clean up data table columns
   raw_data$data <- lapply(raw_data$data, function(tbl) {
