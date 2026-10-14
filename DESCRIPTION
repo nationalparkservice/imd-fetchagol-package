@@ -9,7 +9,6 @@ Description: Reads data and metadata from an ARCGIS database.
 License: CC0
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
 Imports: 
     cli,
     dplyr,
@@ -30,4 +29,5 @@ Imports:
     xml2
 URL: https://nationalparkservice.github.io/imd-fetchagol-package/
 Remotes: 
-    nationalparkservice/QCkit
+    doi-nps/QCkit
+Config/roxygen2/version: 8.1.0

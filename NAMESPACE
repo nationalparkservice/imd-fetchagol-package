@@ -14,5 +14,7 @@ export(setDataTypesFromMetadata)
 export(troubleshootMetadata)
 export(writeToFiles)
 importFrom(keyring,key_get)
-importFrom(magrittr,"%<>%")
-importFrom(magrittr,"%>%")
+importFrom(magrittr,
+  "%<>%",
+  "%>%"
+)
