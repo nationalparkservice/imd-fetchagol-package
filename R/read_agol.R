@@ -1,8 +1,14 @@
 #' @importFrom magrittr %>% %<>%
 #' @importFrom keyring key_get
 
-
 pkg_globals <- new.env(parent = emptyenv())
+
+# Assign global variables to avoid the "no visible binding for global variable 'x'" error in build checks
+globalVariables(c(
+  "id", "name", "dataColumnNames", "metadataColumnNames", ".", "metadataDef",
+  "metadataClass", "metadataUnit"
+))
+
 
 #' Get AGOL authentication token
 #'

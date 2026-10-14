@@ -1,3 +1,8 @@
+# Assign global variables to avoid the "no visible binding for global variable 'x'" error in build checks
+globalVariables(c(
+  "name", "label", "code", "definition", "attributeName"
+))
+
 #' Write data and data dictionaries to files
 #'
 #' @param all_data Output of `fetchRawData()`
